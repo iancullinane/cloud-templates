@@ -20,6 +20,7 @@ Parameters:
   TestString:
     Type: String
     Default: test9
+
 Mappings:
   RegionMap:
     us-east-1:
@@ -66,11 +67,12 @@ Mappings:
       "EC2" : "t2.medium"
       "DB" : "db.t2.medium"
 
+
 Resources:
   DB:
     Type: "AWS::RDS::DBInstance"
     Properties:
-      AllocatedStorage: 5
+      AllocatedStorage: "5"
       StorageType: gp2
       DBInstanceClass: !FindInMap [InstanceSize, !Ref EnvironmentSize, DB] # Dynamic mapping + Pseudo Parameter
       DBName: !Ref DatabaseName

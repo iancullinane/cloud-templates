@@ -1,0 +1,14 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "WrapperTemplate",
+
+  "Resources": {
+    "WrappedStackWithStackLevelTags": {
+      "Type" : "AWS::CloudFormation::Stack",
+      "Properties" : {
+        "Tags" : [ { "Key" : "Stage", "Value" : "QA" } ],
+        "TemplateURL" : "your-original-template-s3-url"
+      }
+    }
+  }
+}
