@@ -2,7 +2,7 @@ AWSTemplateFormatVersion: '2010-09-09'
 Parameters:
 
   # The base CIDR range, subnets will need to be within this range
-  vpccidr:
+  BaseVPC:
     Type: String
     MinLength: 9
     MaxLength: 18
@@ -11,7 +11,7 @@ Parameters:
     Default: 10.20.0.0/16
   
   # subnetA
-  psharedacidr:
+  PublicCIDROne:
     Type: String
     MinLength: 9
     MaxLength: 18
@@ -20,7 +20,7 @@ Parameters:
     Default: 10.20.0.0/22
   
   # subnetB
-  psharedbcidr:
+  PublicCIDRTwo:
     Type: String
     MinLength: 9
     MaxLength: 18
@@ -36,34 +36,12 @@ Resources:
   VPC:
     Type: "AWS::EC2::VPC"
     Properties:
-      CidrBlock: !Ref vpccidr
+      CidrBlock: !Ref BaseVPC
   IGW:
     Type: "AWS::EC2::InternetGateway"
-  S3AppBucket:
-    DeletionPolicy: Retain
-    Type: "AWS::S3::Bucket"
-    Properties:
-      AccessControl: PublicRead
-      WebsiteConfiguration:
-        ErrorDocument: index.html
-        IndexDocument: index.html
-  BucketPolicyApp:
-    Type: "AWS::S3::BucketPolicy"
-    Properties:
-      Bucket: !Ref S3AppBucket
-      PolicyDocument:
-        Statement:
-          -
-            Sid: "ABC123"
-            Action:
-              - "s3:GetObject"
-            Effect: Allow
-            Resource: !Join ["", ["arn:aws:s3:::", !Ref S3AppBucket, "/*"]]
-            Principal:
-              AWS:
-                - "*"
   
-  # An Internet Gateway let's in the cats
+  # An Internet Gateway let's in the cats, does not cost money like a 
+  # typical NAT gateway does
   GatewayAttach:
     Type: "AWS::EC2::VPCGatewayAttachment"
     Properties:
@@ -78,7 +56,7 @@ Resources:
         Fn::Select: 
         - 0
         - Fn::GetAZs: ""
-      CidrBlock: !Ref psharedacidr
+      CidrBlock: !Ref PublicCIDROne
       MapPublicIpOnLaunch: true
       VpcId: !Ref VPC
   SubnetPublicSharedB:
@@ -88,9 +66,24 @@ Resources:
         Fn::Select: 
         - 1
         - Fn::GetAZs: ""
-      CidrBlock: !Ref psharedbcidr
+      CidrBlock: !Ref PublicCIDRTwo
       MapPublicIpOnLaunch: true
       VpcId: !Ref VPC
+
+  # The actual route associations, find way to not be manual
+
+  # RouteDefaultPrivateA:
+  #   Type: "AWS::EC2::Route"
+  #   Properties:
+  #     DestinationCidrBlock: 0.0.0.0/0
+  #     NatGatewayId: !Ref NatGatewayA
+  #     RouteTableId: !Ref RouteTablePrivateA
+  # RouteDefaultPrivateB:
+  #   Type: "AWS::EC2::Route"
+  #   Properties:
+  #     DestinationCidrBlock: 0.0.0.0/0
+  #     NatGatewayId: !Ref NatGatewayB
+  #     RouteTableId: !Ref RouteTablePrivateB
   
   # A subnet association for each availablity zone
   # https://docs.aws.amazon.com/en_pv/AWSCloudFormation/latest/UserGuide/aws-resource-ec2-subnet-route-table-assoc.html
@@ -104,8 +97,13 @@ Resources:
     Properties:
       RouteTableId: !Ref RouteTablePublic
       SubnetId: !Ref SubnetPublicSharedB
-  
-  # The actual route associations, find way to not be manual
+
+  # A route table for public and private
+  RouteTablePublic:
+    Type: "AWS::EC2::RouteTable"
+    Properties:
+      VpcId: !Ref VPC
+
   RouteDefaultPublic:
     Type: "AWS::EC2::Route"
     DependsOn: GatewayAttach
@@ -113,24 +111,7 @@ Resources:
       DestinationCidrBlock: 0.0.0.0/0
       GatewayId: !Ref IGW
       RouteTableId: !Ref RouteTablePublic
-  RouteDefaultPrivateA:
-    Type: "AWS::EC2::Route"
-    Properties:
-      DestinationCidrBlock: 0.0.0.0/0
-      NatGatewayId: !Ref NatGatewayA
-      RouteTableId: !Ref RouteTablePrivateA
-  RouteDefaultPrivateB:
-    Type: "AWS::EC2::Route"
-    Properties:
-      DestinationCidrBlock: 0.0.0.0/0
-      NatGatewayId: !Ref NatGatewayB
-      RouteTableId: !Ref RouteTablePrivateB
-  
-  # A route table for public and private
-  RouteTablePublic:
-    Type: "AWS::EC2::RouteTable"
-    Properties:
-      VpcId: !Ref VPC
+
   RouteTablePrivateA:
     Type: "AWS::EC2::RouteTable"
     Properties:
@@ -141,26 +122,26 @@ Resources:
       VpcId: !Ref VPC
   
   # Setting up a NAT per az
-  EIPNatGWA:
-    DependsOn: GatewayAttach
-    Type: "AWS::EC2::EIP"
-    Properties:
-      Domain: vpc
-  EIPNatGWB:
-    DependsOn: GatewayAttach
-    Type: "AWS::EC2::EIP"
-    Properties:
-      Domain: vpc
-  NatGatewayA:
-    Type: "AWS::EC2::NatGateway"
-    Properties:
-      AllocationId: !GetAtt EIPNatGWA.AllocationId
-      SubnetId: !Ref SubnetPublicSharedA
-  NatGatewayB:
-    Type: "AWS::EC2::NatGateway"
-    Properties:
-      AllocationId: !GetAtt EIPNatGWB.AllocationId
-      SubnetId: !Ref SubnetPublicSharedB
+  # EIPNatGWA:
+  #   DependsOn: GatewayAttach
+  #   Type: "AWS::EC2::EIP"
+  #   Properties:
+  #     Domain: vpc
+  # EIPNatGWB:
+  #   DependsOn: GatewayAttach
+  #   Type: "AWS::EC2::EIP"
+  #   Properties:
+  #     Domain: vpc
+  # NatGatewayA:
+  #   Type: "AWS::EC2::NatGateway"
+  #   Properties:
+  #     AllocationId: !GetAtt EIPNatGWA.AllocationId
+  #     SubnetId: !Ref SubnetPublicSharedA
+  # NatGatewayB:
+  #   Type: "AWS::EC2::NatGateway"
+  #   Properties:
+  #     AllocationId: !GetAtt EIPNatGWB.AllocationId
+  #     SubnetId: !Ref SubnetPublicSharedB
 
 Outputs:
   vpcid:
@@ -180,29 +161,24 @@ Outputs:
   #   Export: # added to export
   #     Name: sharedinf-privateA
 
-  natgatewayaid:
-    Description: ID of NAT Gateway A
-    Value: !Ref NatGatewayA
-  natgatewaybid:
-    Description: ID of NAT Gateway B
-    Value: !Ref NatGatewayB
-  publicroutetable:
+  # natgatewayaid:
+  #   Description: ID of NAT Gateway A
+  #   Value: !Ref NatGatewayA
+  # natgatewaybid:
+  #   Description: ID of NAT Gateway B
+  #   Value: !Ref NatGatewayB
+  PublicRouteA:
     Description: ID of Public Route Table
     Value: !Ref RouteTablePublic
     Export: # added to export
       Name: sharedinf-publicrt
-  privateroutetablea:
+  PublicRouteB:
     Description: ID of Private Route Table - A
     Value: !Ref RouteTablePrivateA
     Export: # added to export
       Name: sharedinf-privaterta
-  privateroutetableb:
-    Description: ID of Private Route Table - B
-    Value: !Ref RouteTablePrivateB
-    Export: # added to export
-      Name: sharedinf-privatertb
-  appbucketurl:
-    Description: Shared Infrastructure App Bucket
-    Value: !GetAtt S3AppBucket.WebsiteURL
-    Export: # added to export
-      Name: sharedinf-appbucketurl
+  # privateroutetableb:
+  #   Description: ID of Private Route Table - B
+  #   Value: !Ref RouteTablePrivateB
+  #   Export: # added to export
+  #     Name: sharedinf-privatertb
