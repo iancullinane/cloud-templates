@@ -1,0 +1,138 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: For hooking a worker in the base vpc
+# Metadata: 
+
+Parameters: 
+  AMIId:
+    Description: AMI ID to use (in multi-region envs this would need to be an app)
+    Type: String
+  KMSKeyName:
+    Description: The name of an EC2 Key Pair to allow SSH access to the instance.
+    Type: AWS::EC2::KeyPair::KeyName
+  BaseVPCName:
+    Description: The name of the VPC to inherit from
+    Type: String
+  
+  # The following assumes you have #cloud-config files in S3, could be 
+  # any kinf of file though
+  CloudInitInclUrl:
+    Description: The URL path of the S3 bucket extra config files live in
+    Type: String
+  CloudInitFileKey:
+    Description: The file in the config S3 bucket 
+    Type: String
+
+  # Pass the roles actions in config, not IaC
+  InstanceRoleActions:
+    Description: The comma separated list of actions for the instance iam role policy
+    Type: CommaDelimitedList
+    Default: "sts:AssumeRole,autoscaling:DescribeAutoScalingInstances,autoscaling:DescribeAutoScalingGroups,route53:ListHostedZonesByName,route53:ChangeResourceRecordSets,ec2:DescribeInstances,ecr:*"
+
+  OwnerTag:
+    Description: Value for the 'Owner' tag
+    Type: String
+    Default: ""
+  ProjectTag:
+    Description: Value for the 'Project' tag
+    Type: String
+    Default: ""
+  EnvironmentTag:
+    Description: Value for the 'Environment' tag
+    Type: String
+    Default: ""
+# Mappings: 
+
+Conditions: 
+  InheritOwnerTag:
+    Fn::Equals:
+    - Ref: OwnerTag
+    - ""
+  InheritProjectTag:
+    Fn::Equals:
+    - Ref: ProjectTag
+    - ""
+  InheritEnvironmentTag:
+    Fn::Equals:
+    - Ref: EnvironmentTag
+    - ""
+
+Resources: 
+  CoreOSIamRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - ec2.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      Path: /
+      ManagedPolicyArns:
+      - arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM
+      Policies:
+      - PolicyName:
+          Fn::Sub: ${AWS::StackName}-coros-policy
+        PolicyDocument:
+          Statement:
+          - Condition:
+              ForAllValues:StringLike:
+                ec2:ResourceTag:
+                - Fn::If:
+                  - InheritOwnerTag
+                  - Fn::ImportValue:
+                      Fn::Sub: ${BaseVPCName}-OwnerTag
+                  - Ref: OwnerTag
+                - Fn::If:
+                  - InheritEnvironmentTag
+                  - Fn::ImportValue:
+                      Fn::Sub: ${BaseVPCName}-EnvironmentTag
+                  - Ref: EnvironmentTag
+            Resource: '*'
+            Action:
+              Ref: InstanceRoleActions
+            Effect: Allow
+          - Sid: AllowSqsLifecycleMgmt
+            Effect: Allow
+            Resource:
+              Fn::ImportValue:
+                Fn::Sub: ${BaseVPCName}-LifeCycleQueueArn
+            Action:
+            - sqs:ReceiveMessage
+            - sqs:DeleteMessage
+          - Sid: AllowKMS
+            Effect: Allow
+            Action:
+            - kms:CreateGrant
+            - kms:Decrypt
+            - kms:Describe*
+            - kms:Encrypt
+            - kms:GenerateDataKey*
+            - kms:ReEncrypt*
+            Resource:
+              Fn::ImportValue:
+                Fn::Sub: ${BaseVPCName}-KMSKeyArn
+  
+  
+  
+  
+  
+  
+
+#   # Outputs:
+# iamRole:
+#   Type: AWS::IAM::Role
+#   Properties:
+#     Path:
+#     AssumeRolePolicyDocument: 
+#     Policies:
+#       - 
+#        PolicyName: "root"
+#        PolicyDocument:
+#          Version: "2012-10-17"
+#          Statement:
+#             - 
+#               Effect: "Allow"
+#               Action: "*"
+#               Resource: "*"
