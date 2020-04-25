@@ -1,0 +1,146 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Shared Cluster Resources
+# Metadata: 
+
+Parameters: 
+  BaseVPCStackName:
+    Description: Cloudformation Stack that created the VPC
+    Type: String
+
+  # TODO::Inherit
+  OwnerTag:
+    Description: Value for the 'Owner' tag
+    Type: String
+  ProjectTag:
+    Description: Value for the 'Project' tag
+    Type: String
+  EnvironmentTag:
+    Description: Value for the 'Environment' tag
+    Type: String
+# Mappings: 
+
+# Conditions: 
+
+Resources: 
+
+  # Allow resources in the cluster to speak to each other
+  ClusterSecurityGroup:
+      Type: AWS::EC2::SecurityGroup
+      Properties:
+        Tags:
+        - Key: Name
+          Value:
+            Fn::Sub: ${AWS::StackName}-cluster-sg
+        - Key: Owner
+          Value:
+            Ref: OwnerTag
+        - Key: Project
+          Value:
+            Ref: ProjectTag
+        - Key: Environment
+          Value:
+            Ref: EnvironmentTag
+        VpcId:
+          Fn::ImportValue:
+            Fn::Sub: ${BaseVPCStackName}-VpcId
+        GroupDescription:
+          Fn::Sub: ${AWS::StackName}-cluster-sg
+        SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp:
+            Fn::ImportValue:
+              Fn::Sub: ${BaseVPCStackName}-VpcCidr
+
+  ClusterSGIngressAllTcp:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId:
+        Ref: ClusterSecurityGroup
+      IpProtocol: tcp
+      FromPort: 0
+      ToPort:  65535
+      SourceSecurityGroupId:
+        Ref: ClusterSecurityGroup
+
+  # TODO::Eventually we want this automated, which would be this role
+  # CloudFormationRole:
+  #   Type: AWS::IAM::Role
+  #   Properties:
+  #     AssumeRolePolicyDocument:
+  #       Version: "2012-10-17"
+  #       Statement:
+  #       - Action: sts:AssumeRole
+  #         Effect: Allow
+  #         Condition:
+  #           StringEquals:
+  #             sts:ExternalId:
+  #               Ref: CloudFormationExternalID
+  #         Principal:
+  #           AWS:
+  #             Fn::Sub: arn:aws:iam::${DeployAgentAccount}:root
+  #     Policies:
+  #     - PolicyName: CloudFormation
+  #       PolicyDocument:
+  #         Version: "2012-10-17"
+  #         Statement:
+  #         - Effect: Allow
+  #           Action:
+  #           - states:*
+  #           - events:* 
+  #           - sns:*
+  #           - iam:*
+  #           - s3:*
+  #           - lambda:*
+  #           - ec2:*
+  #           - dynamodb:*
+  #           - cloudformation:CreateChangeSet
+  #           - cloudformation:DeleteChangeSet
+  #           - cloudformation:DescribeChangeSet
+  #           - cloudformation:DescribeStacks
+  #           - cloudformation:ExecuteChangeSet
+  #           Resource:
+  #           - '*'
+
+  # TODO::Add consul to cluster
+  # ConsulHTTPIngressDeployAgent:
+  #   Type: AWS::EC2::SecurityGroupIngress
+  #   Condition: DeployAgentCidrCond
+  #   Properties:
+  #     GroupId:
+  #       Ref: ClusterSecurityGroup
+  #     IpProtocol: tcp
+  #     FromPort: 8500
+  #     ToPort: 8500
+  #     CidrIp:
+  #       Ref: DeployAgentCidr
+Outputs:
+  ClusterSGId:
+    Description: Cluster Security Group ID
+    Value:
+      Ref: ClusterSecurityGroup
+    Export:
+      Name:
+        Fn::Sub: ${AWS::StackName}-ClusterSGId
+  ProjectTag:
+    Description: Default Project Tag
+    Value:
+      Ref: ProjectTag
+    Export:
+      Name:
+        Fn::Sub: ${AWS::StackName}-ProjectTag
+  OwnerTag:
+    Description: Default Owner Tag
+    Value:
+      Ref: OwnerTag
+    Export:
+      Name:
+        Fn::Sub: ${AWS::StackName}-OwnerTag
+  EnvironmentTag:
+    Description: Default Environment Tag
+    Value:
+      Ref: EnvironmentTag
+    Export:
+      Name:
+        Fn::Sub: ${AWS::StackName}-EnvironmentTag

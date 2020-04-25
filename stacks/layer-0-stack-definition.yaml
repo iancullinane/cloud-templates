@@ -1,0 +1,30 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: WrapperTemplate
+Parameters: 
+  EnvironmentTag:
+    Type: String
+    Description: Environment these resources belong to 
+    Default: dev
+  OwnerTag:
+    Type: String
+    Description: Resource owner
+    Default: icullinane
+  ProjectTag:
+    Type: String
+    Description: Project name
+    Default: AWS-Certs
+
+Resources:
+  WrappedStackWithStackLevelTags:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      Parameters:
+        APPVERSION: "1"
+      Tags:
+      - Key: Environment
+        Value: !Ref EnvironmentTag
+      - Key: Owner
+        Value: !Ref OwnerTag
+      - Key: Project
+        Value: !Ref ProjectTag
+      TemplateURL: http://cf-templates-hfku7oh555h0-us-east-2.s3.amazonaws.com/app-w-net.yaml
