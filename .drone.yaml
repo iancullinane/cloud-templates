@@ -1,0 +1,14 @@
+kind: pipeline
+name: default
+
+steps:
+  - name: upload
+    image: plugins/s3
+    settings:
+      bucket: craft-cf-bucket
+      access_key:
+        from_secret: AWS-Key
+      secret_key:
+        from_secret: AWS-Secret
+      source: ./
+      target: /templates/
