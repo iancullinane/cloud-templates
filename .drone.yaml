@@ -7,9 +7,10 @@ steps:
     image: plugins/s3
     settings:
       bucket: craft-cf-bucket
+      region: us-east-2
       access_key:
         from_secret: AWS-Key
       secret_key:
         from_secret: AWS-Secret
-      source: ./
+      source: *.yaml
       target: /templates/
