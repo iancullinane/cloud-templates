@@ -1,8 +1,8 @@
 AWSTemplateFormatVersion: 2010-09-09
 Description: For hooking a worker in the base vpc
-# Metadata: 
+# Metadata:
 
-Parameters: 
+Parameters:
   AMIId:
     Description: AMI ID to use (in multi-region envs this would need to be an app)
     Type: String
@@ -12,21 +12,20 @@ Parameters:
   ClusterBaseStackName:
     Description: The name of the VPC to inherit from
     Type: String
-  
-  # The following assumes you have #cloud-config files in S3, could be 
-  # any kinf of file though
-  CloudInitInclUrl:
-    Description: The URL path of the S3 bucket extra config files live in
-    Type: String
-  CloudInitFileKey:
-    Description: The file in the config S3 bucket 
-    Type: String
 
   # Pass the roles actions in config, not IaC
+  InstanceType:
+    Description: Size of root volumes
+    Type: String
+    Default: "t2.micro"
   InstanceRoleActions:
     Description: The comma separated list of actions for the instance iam role policy
     Type: CommaDelimitedList
     Default: "sts:AssumeRole,autoscaling:DescribeAutoScalingInstances,autoscaling:DescribeAutoScalingGroups,route53:ListHostedZonesByName,route53:ChangeResourceRecordSets,ec2:DescribeInstances,ecr:*"
+  RootVolumeSize:
+    Description: Size of root volumes
+    Type: String
+    Default: "8"
 
   OwnerTag:
     Description: Value for the 'Owner' tag
@@ -40,71 +39,71 @@ Parameters:
     Description: Value for the 'Environment' tag
     Type: String
     Default: ""
-# Mappings: 
+# Mappings:
 
-Conditions: 
+Conditions:
   InheritOwnerTag:
     Fn::Equals:
-    - Ref: OwnerTag
-    - ""
+      - Ref: OwnerTag
+      - ""
   InheritProjectTag:
     Fn::Equals:
-    - Ref: ProjectTag
-    - ""
+      - Ref: ProjectTag
+      - ""
   InheritEnvironmentTag:
     Fn::Equals:
-    - Ref: EnvironmentTag
-    - ""
+      - Ref: EnvironmentTag
+      - ""
 
-Resources: 
+Resources:
   ClusterBaseIAMRole:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
         Statement:
-        - Effect: Allow
-          Principal:
-            Service:
-            - ec2.amazonaws.com
-          Action:
-          - sts:AssumeRole
+          - Effect: Allow
+            Principal:
+              Service:
+                - ec2.amazonaws.com
+            Action:
+              - sts:AssumeRole
       Path: /
       ManagedPolicyArns:
-      - arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM
+        - arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM
       Policies:
-      - PolicyName:
-          Fn::Sub: ${AWS::StackName}-cluster-policy
-        PolicyDocument:
-          Statement:
-          - Condition:
-              ForAllValues:StringLike:
-                ec2:ResourceTag:
-                - Fn::If:
-                  - InheritOwnerTag
-                  - Fn::ImportValue:
-                      Fn::Sub: ${ClusterBaseStackName}-OwnerTag
-                  - Ref: OwnerTag
-                - Fn::If:
-                  - InheritEnvironmentTag
-                  - Fn::ImportValue:
-                      Fn::Sub: ${ClusterBaseStackName}-EnvironmentTag
-                  - Ref: EnvironmentTag
-            Resource: '*'
-            Action:
-              Ref: InstanceRoleActions
-            Effect: Allow
-          - Sid: AllowKMS
-            Effect: Allow
-            Action:
-            - kms:CreateGrant
-            - kms:Decrypt
-            - kms:Describe*
-            - kms:Encrypt
-            - kms:GenerateDataKey*
-            - kms:ReEncrypt*
-            Resource:
-              Fn::ImportValue:
-                Fn::Sub: ${ClusterBaseStackName}-KMSKeyArn
+        - PolicyName:
+            Fn::Sub: ${AWS::StackName}-cluster-policy
+          PolicyDocument:
+            Statement:
+              - Condition:
+                  ForAllValues:StringLike:
+                    ec2:ResourceTag:
+                      - Fn::If:
+                          - InheritOwnerTag
+                          - Fn::ImportValue:
+                              Fn::Sub: ${ClusterBaseStackName}-OwnerTag
+                          - Ref: OwnerTag
+                      - Fn::If:
+                          - InheritEnvironmentTag
+                          - Fn::ImportValue:
+                              Fn::Sub: ${ClusterBaseStackName}-EnvironmentTag
+                          - Ref: EnvironmentTag
+                Resource: "*"
+                Action:
+                  Ref: InstanceRoleActions
+                Effect: Allow
+              - Sid: AllowKMS
+                Effect: Allow
+                Action:
+                  - kms:CreateGrant
+                  - kms:Decrypt
+                  - kms:Describe*
+                  - kms:Encrypt
+                  - kms:GenerateDataKey*
+                  - kms:ReEncrypt*
+                Resource:
+                  Fn::ImportValue:
+                    Fn::Sub: ${ClusterBaseStackName}-KMSKeyArn
 
   # Internal key eventually encrypting cluster secret
   KMSKey:
@@ -117,26 +116,26 @@ Resources:
         Version: "2012-10-17"
         Id: base-key
         Statement:
-        - Sid: Enable IAM Permissions
-          Effect: Allow
-          Principal:
-            AWS:
-              Fn::Sub: arn:aws:iam::${AWS::AccountId}:root
-          Action: kms:*
-          Resource: '*'
+          - Sid: Enable IAM Permissions
+            Effect: Allow
+            Principal:
+              AWS:
+                Fn::Sub: arn:aws:iam::${AWS::AccountId}:root
+            Action: kms:*
+            Resource: "*"
       Tags:
-      - Key: Name
-        Value:
-          Fn::Sub: ${AWS::StackName}-key
-      - Key: Owner
-        Value:
-          Ref: OwnerTag
-      - Key: Project
-        Value:
-          Ref: ProjectTag
-      - Key: Environment
-        Value:
-          Ref: EnvironmentTag
+        - Key: Name
+          Value:
+            Fn::Sub: ${AWS::StackName}-key
+        - Key: Owner
+          Value:
+            Ref: OwnerTag
+        - Key: Project
+          Value:
+            Ref: ProjectTag
+        - Key: Environment
+          Value:
+            Ref: EnvironmentTag
   KMSKeyAlias:
     Type: AWS::KMS::Alias
     Properties:
@@ -144,182 +143,130 @@ Resources:
         Fn::Sub: alias/${AWS::StackName}-key
       TargetKeyId:
         Ref: KMSKey
-          # TODO::Cluster lifecycles
-          # - Sid: AllowSqsLifecycleMgmt
-          #   Effect: Allow
-          #   Resource:
-          #     Fn::ImportValue:
-          #       Fn::Sub: ${BaseVPCName}-LifeCycleQueueArn
-          #   Action:
-          #   - sqs:ReceiveMessage
-          #   - sqs:DeleteMessage
-  
-  
+
   PublicAutoScalingGroup:
     Type: AWS::AutoScaling::AutoScalingGroup
-    # Condition: PublicIPAsg
+    # Condition: PublicIPAs
     Properties:
+      LaunchConfigurationName: Launc
       AvailabilityZones:
-      - Fn::ImportValue:
-          Fn::Sub: ${ClusterBaseStackName}-AvailabilityZone1
-      - Fn::ImportValue:
-          Fn::Sub: ${ClusterBaseStackName}-AvailabilityZone2
-      - Fn::ImportValue:
-          Fn::Sub: ${ClusterBaseStackName}-AvailabilityZone3
+        - Fn::ImportValue:
+            Fn::Sub: ${ClusterBaseStackName}-AvailabilityZone1
+        - Fn::ImportValue:
+            Fn::Sub: ${ClusterBaseStackName}-AvailabilityZone2
       VPCZoneIdentifier:
-      - Fn::ImportValue:
-          Fn::Sub: ${ClusterBaseStackName}-PublicSubnetId1
-      - Fn::ImportValue:
-          Fn::Sub: ${ClusterBaseStackName}-PublicSubnetId2
-      - Fn::ImportValue:
-          Fn::Sub: ${ClusterBaseStackName}-PublicSubnetId3
-      LaunchConfigurationName:
-        Ref: LaunchConfig
+        - Fn::ImportValue:
+            Fn::Sub: ${ClusterBaseStackName}-PublicSubnetId1
+        - Fn::ImportValue:
+            Fn::Sub: ${ClusterBaseStackName}-PublicSubnetId2
       TerminationPolicies:
-      - OldestInstance
+        - OldestInstance
       MinSize: "0"
       MaxSize: "100"
       Tags:
-      - Key: Name
-        Value:
-          Fn::Sub: ${AWS::StackName}-pool
-        PropagateAtLaunch: true
-      - Key: Owner
-        Value:
-          Fn::If:
-          - InheritOwnerTag
-          - Fn::ImportValue:
-              Fn::Sub: ${ClusterBaseStackName}-OwnerTag
-          - Ref: OwnerTag
-        PropagateAtLaunch: true
-      - Key: Project
-        Value:
-          Fn::If:
-          - InheritOwnerTag
-          - Fn::ImportValue:
-              Fn::Sub: ${ClusterBaseStackName}-ProjectTag
-          - Ref: ProjectTag
-        PropagateAtLaunch: true
-      - Key: Environment
-        Value:
-          Fn::If:
-          - InheritEnvironmentTag
-          - Fn::ImportValue:
-              Fn::Sub: ${ClusterBaseStackName}-EnvironmentTag
-          - Ref: EnvironmentTag
-        PropagateAtLaunch: true
-      - Key: csi-data
-        Value:
-          Ref: CSIDataTag
-        PropagateAtLaunch: true
-  PrivateSingleAutoScalingGroup:
-    Type: AWS::AutoScaling::AutoScalingGroup
-    Condition: PrivateIPSingleAsg
-    Properties:
-      AvailabilityZones:
-      - Fn::ImportValue:
-          Fn::Sub: ${ClusterBaseStackName}-AvailabilityZone${AZIndex}
-      VPCZoneIdentifier:
-      - Fn::ImportValue:
-          Fn::Sub: ${ClusterBaseStackName}-PrivateSubnetId${AZIndex}
-      LaunchConfigurationName:
-        Ref: LaunchConfig
-      TerminationPolicies:
-      - OldestInstance
-      MinSize: "0"
-      MaxSize: "100"
-      Tags:
-      - Key: Name
-        Value:
-          Fn::Sub: ${AWS::StackName}-pool
-        PropagateAtLaunch: true
-      - Key: Owner
-        Value:
-          Fn::If:
-          - InheritOwnerTag
-          - Fn::ImportValue:
-              Fn::Sub: ${ClusterBaseStackName}-OwnerTag
-          - Ref: OwnerTag
-        PropagateAtLaunch: true
-      - Key: Project
-        Value:
-          Fn::If:
-          - InheritOwnerTag
-          - Fn::ImportValue:
-              Fn::Sub: ${ClusterBaseStackName}-ProjectTag
-          - Ref: ProjectTag
-        PropagateAtLaunch: true
-      - Key: Environment
-        Value:
-          Fn::If:
-          - InheritEnvironmentTag
-          - Fn::ImportValue:
-              Fn::Sub: ${ClusterBaseStackName}-EnvironmentTag
-          - Ref: EnvironmentTag
-        PropagateAtLaunch: true
-      - Key: csi-data
-        Value:
-          Ref: CSIDataTag
-        PropagateAtLaunch: true
+        - Key: Name
+          Value:
+            Fn::Sub: ${AWS::StackName}-pool
+          PropagateAtLaunch: true
+        - Key: Owner
+          Value:
+            Fn::If:
+              - InheritOwnerTag
+              - Fn::ImportValue:
+                  Fn::Sub: ${ClusterBaseStackName}-OwnerTag
+              - Ref: OwnerTag
+          PropagateAtLaunch: true
+        - Key: Project
+          Value:
+            Fn::If:
+              - InheritOwnerTag
+              - Fn::ImportValue:
+                  Fn::Sub: ${ClusterBaseStackName}-ProjectTag
+              - Ref: ProjectTag
+          PropagateAtLaunch: true
+        - Key: Environment
+          Value:
+            Fn::If:
+              - InheritEnvironmentTag
+              - Fn::ImportValue:
+                  Fn::Sub: ${ClusterBaseStackName}-EnvironmentTag
+              - Ref: EnvironmentTag
+          PropagateAtLaunch: true
 
-  LaunchConfiguration:
+  LaunchConfig:
     Type: AWS::AutoScaling::LaunchConfiguration
     Properties:
-      LaunchConfigurationName: 
-      AssociatePublicIpAddress: true|false
-      IamInstanceProfile: 
-      ImageId: 
-      EbsOptimized: true|false
-      InstanceMonitoring: true|false
-      InstanceType: 
-      KernelId: 
-      KeyName: 
+      ImageId:
+        Ref: AMIId
+      AssociatePublicIpAddress: true
+      BlockDeviceMappings:
+        - DeviceName: /dev/xvda
+          Ebs:
+            VolumeSize:
+              Ref: RootVolumeSize
+            VolumeType: gp2
+        - DeviceName: /dev/xvdb
+          VirtualName: ephemeral0
+      InstanceType:
+        Ref: InstanceType
+      IamInstanceProfile:
+        Ref: WorkerRoleProfile
+      KeyName:
+        Ref: KMSKeyName
       SecurityGroups:
-        - sg-id
-      UserData:
-        Fn::Base64: !Sub
-          #!/bin/bash -ex # your script here  
-  
-  # LaunchConfig:
-  #   Type: AWS::AutoScaling::LaunchConfiguration
-  #   Properties:
-  #     ImageId:
-  #       Ref: AMIId
-  #     AssociatePublicIpAddress:
-  #       Fn::If:
-  #       - HasPublicIP
-  #       - "true"
-  #       - Ref: AWS::NoValue
-  #     BlockDeviceMappings:
-  #     - DeviceName: /dev/xvda
-  #       Ebs:
-  #         VolumeSize:
-  #           Ref: RootVolumeSizeGB
-  #         VolumeType: gp2
-  #     - DeviceName: /dev/xvdb
-  #       VirtualName: ephemeral0
-  #     EbsOptimized:
-  #       Fn::If:
-  #       - EBSOptimizedCond
-  #       - "true"
-  #       - Ref: AWS::NoValue
-  #     InstanceType:
-  #       Ref: InstanceType
-  #     IamInstanceProfile:
-  #       Ref: CoreOSRoleProfile
-  #     KeyName:
-  #       Ref: KeyName
-  #     SecurityGroups:
-  #     - Fn::ImportValue:
-  #         Fn::Sub: ${ClusterBaseStackName}-ClusterSGId
-  #     - Ref: SecondarySecurityGroup
+        - Fn::ImportValue:
+            Fn::Sub: ${ClusterBaseStackName}-ClusterSGId
+
+  WorkerIamRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ec2.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Path: /
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM
+      Policies:
+        - PolicyName:
+            Fn::Sub: ${AWS::StackName}-OS-policy
+          PolicyDocument:
+            Statement:
+              - Condition:
+                  ForAllValues:StringLike:
+                    ec2:ResourceTag:
+                      - Fn::If:
+                          - InheritOwnerTag
+                          - Fn::ImportValue:
+                              Fn::Sub: ${ClusterBaseStackName}-OwnerTag
+                          - Ref: OwnerTag
+                      - Fn::If:
+                          - InheritEnvironmentTag
+                          - Fn::ImportValue:
+                              Fn::Sub: ${ClusterBaseStackName}-EnvironmentTag
+                          - Ref: EnvironmentTag
+                Resource: "*"
+                Action:
+                  Ref: InstanceRoleActions
+                Effect: Allow
+
+  WorkerRoleProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Path: /
+      Roles:
+        - Ref: WorkerIamRole
+          # - Ref: SecondarySecurityGroup
   #     UserData:
   #       Fn::Base64:
   #         Fn::Join:
   #         - ""
   #         - - |+
   #             #cloud-config
-
   #           - |
   #             write_files:
   #           - |2
@@ -349,56 +296,44 @@ Resources:
   #           - '      CLOUDINIT_INCL_URL='
   #           - Ref: CloudInitInclUrl
   #           - |2+
-
   #           - '      CLOUDINIT_INCL_FILE='
   #           - Ref: CloudInitInclFile
   #           - |2+
-
   #           - '      DISCOVERY_DNS_ZONE='
   #           - Fn::ImportValue:
   #               Fn::Sub: ${ClusterBaseStackName}-DiscoveryDnsZone
   #           - |2+
-
   #           - '      DISCOVERY_ZONE_PREFIX='
   #           - Fn::ImportValue:
   #               Fn::Sub: ${ClusterBaseStackName}-DiscoveryZonePrefix
   #           - |2+
-
   #           - '      APPLICATION_ENVIRONMENT='
   #           - Fn::ImportValue:
   #               Fn::Sub: ${ClusterBaseStackName}-ApplicationEnvironment
   #           - |2+
-
   #           - '      FLEET_ROLE='
   #           - Ref: RoleTag
   #           - |2+
-
   #           - '      LOG_INDEX='
   #           - Fn::ImportValue:
   #               Fn::Sub: ${ClusterBaseStackName}-LogIndex
   #           - |2+
-
   #           - '      METRIC_KEY='
   #           - Fn::ImportValue:
   #               Fn::Sub: ${ClusterBaseStackName}-MetricKey
   #           - |2+
-
   #           - '      CONSUL_BOOTSTRAP='
   #           - Ref: ConsulBootstrap
   #           - |2+
-
   #           - '      NOMAD_BOOTSTRAP='
   #           - Ref: NomadBootstrap
   #           - |2+
-
   #           - '      REGION='
   #           - Ref: AWS::Region
   #           - |2+
-
   #           - '      ACCOUNT_ID='
   #           - Ref: AWS::AccountId
   #           - |2+
-
   #           - '      RESERVED_CPU='
   #           - Fn::If:
   #             - DefaultReservedCPU
@@ -408,7 +343,6 @@ Resources:
   #               - cpu
   #             - Ref: ReservedCPU
   #           - |2+
-
   #           - '      RESERVED_MEMORY='
   #           - Fn::If:
   #             - DefaultReservedMem
@@ -418,7 +352,6 @@ Resources:
   #               - mem
   #             - Ref: ReservedMem
   #           - |2+
-
   #           - |2
   #               # customize the etcd2 unit
   #           - |2
@@ -456,7 +389,6 @@ Resources:
   #           - '      '
   #           - Ref: DockerCfg
   #           - |2+
-
   #           - |
   #             coreos:
   #           - |2
@@ -489,20 +421,19 @@ Resources:
   #                     # extra cloud-init files can be found at https://github.turbine.com/MGP-Server/cloud-config
   #           - |2
   #                     ExecStart=/usr/bin/bash -c '/usr/bin/coreos-cloudinit --from-url ${CLOUDINIT_INCL_URL}/${CLOUDINIT_INCL_FILE}'
-
 #   # Outputs:
 # iamRole:
 #   Type: AWS::IAM::Role
 #   Properties:
 #     Path:
-#     AssumeRolePolicyDocument: 
+#     AssumeRolePolicyDocument:
 #     Policies:
-#       - 
+#       -
 #        PolicyName: "root"
 #        PolicyDocument:
 #          Version: "2012-10-17"
 #          Statement:
-#             - 
+#             -
 #               Effect: "Allow"
 #               Action: "*"
 #               Resource: "*"

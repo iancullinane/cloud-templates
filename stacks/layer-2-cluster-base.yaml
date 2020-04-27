@@ -1,8 +1,8 @@
 AWSTemplateFormatVersion: 2010-09-09
 Description: Shared Cluster Resources
-# Metadata: 
+# Metadata:
 
-Parameters: 
+Parameters:
   BaseVPCStackName:
     Description: Cloudformation Stack that created the VPC
     Type: String
@@ -17,17 +17,16 @@ Parameters:
   EnvironmentTag:
     Description: Value for the 'Environment' tag
     Type: String
-# Mappings: 
+# Mappings:
 
-# Conditions: 
+# Conditions:
 
-Resources: 
-
+Resources:
   # Allow resources in the cluster to speak to each other
   ClusterSecurityGroup:
-      Type: AWS::EC2::SecurityGroup
-      Properties:
-        Tags:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      Tags:
         - Key: Name
           Value:
             Fn::Sub: ${AWS::StackName}-cluster-sg
@@ -40,18 +39,18 @@ Resources:
         - Key: Environment
           Value:
             Ref: EnvironmentTag
-        VpcId:
-          Fn::ImportValue:
-            Fn::Sub: ${BaseVPCStackName}-VpcId
-        GroupDescription:
-          Fn::Sub: ${AWS::StackName}-cluster-sg
-        SecurityGroupIngress:
+      VpcId:
+        Fn::ImportValue:
+          Fn::Sub: ${BaseVPCStackName}-VPC-ID
+      GroupDescription:
+        Fn::Sub: ${AWS::StackName}-cluster-sg
+      SecurityGroupIngress:
         - IpProtocol: tcp
           FromPort: 22
           ToPort: 22
           CidrIp:
             Fn::ImportValue:
-              Fn::Sub: ${BaseVPCStackName}-VpcCidr
+              Fn::Sub: ${BaseVPCStackName}-CidrBlock
 
   ClusterSGIngressAllTcp:
     Type: AWS::EC2::SecurityGroupIngress
@@ -60,7 +59,7 @@ Resources:
         Ref: ClusterSecurityGroup
       IpProtocol: tcp
       FromPort: 0
-      ToPort:  65535
+      ToPort: 65535
       SourceSecurityGroupId:
         Ref: ClusterSecurityGroup
 
@@ -88,7 +87,7 @@ Resources:
   #         - Effect: Allow
   #           Action:
   #           - states:*
-  #           - events:* 
+  #           - events:*
   #           - sns:*
   #           - iam:*
   #           - s3:*
@@ -102,7 +101,6 @@ Resources:
   #           - cloudformation:ExecuteChangeSet
   #           Resource:
   #           - '*'
-
   # TODO::Add consul to cluster
   # ConsulHTTPIngressDeployAgent:
   #   Type: AWS::EC2::SecurityGroupIngress
