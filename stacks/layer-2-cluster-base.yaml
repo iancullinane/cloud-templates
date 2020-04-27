@@ -63,6 +63,45 @@ Resources:
       SourceSecurityGroupId:
         Ref: ClusterSecurityGroup
 
+  # Internal key eventually encrypting cluster secret
+  KMSKey:
+    Type: AWS::KMS::Key
+    Properties:
+      Description: KMS key for encrypting EBS and S3 for this cluster
+      Enabled: true
+      EnableKeyRotation: true
+      KeyPolicy:
+        Version: "2012-10-17"
+        Id: base-key
+        Statement:
+          - Sid: Enable IAM Permissions
+            Effect: Allow
+            Principal:
+              AWS:
+                Fn::Sub: arn:aws:iam::${AWS::AccountId}:root
+            Action: kms:*
+            Resource: "*"
+      Tags:
+        - Key: Name
+          Value:
+            Fn::Sub: ${AWS::StackName}-key
+        - Key: Owner
+          Value:
+            Ref: OwnerTag
+        - Key: Project
+          Value:
+            Ref: ProjectTag
+        - Key: Environment
+          Value:
+            Ref: EnvironmentTag
+  KMSKeyAlias:
+    Type: AWS::KMS::Alias
+    Properties:
+      AliasName:
+        Fn::Sub: alias/${AWS::StackName}-key
+      TargetKeyId:
+        Ref: KMSKey
+
   # TODO::Eventually we want this automated, which would be this role
   # CloudFormationRole:
   #   Type: AWS::IAM::Role
@@ -121,6 +160,23 @@ Outputs:
     Export:
       Name:
         Fn::Sub: ${AWS::StackName}-ClusterSGId
+
+  BaseVPCStackName:
+    Description: Name of VPC
+    Value:
+      Ref: BaseVPCStackName
+    Export:
+      Name:
+        Fn::Sub: ${AWS::StackName}-base-vpc
+
+  ClusterKMSKey:
+    Description: Name of the cluster KMS key
+    Value:
+      Ref: KMSKeyAlias
+    Export:
+      Name:
+        Fn::Sub: ${AWS::StackName}-KMSKeyName
+
   ProjectTag:
     Description: Default Project Tag
     Value:

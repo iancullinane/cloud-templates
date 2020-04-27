@@ -4,12 +4,13 @@ Description: For hooking a worker in the base vpc
 
 Parameters:
   AMIId:
-    Description: AMI ID to use (in multi-region envs this would need to be an app)
-    Type: String
-  KMSKeyName:
-    Description: The name of an EC2 Key Pair to allow SSH access to the instance.
-    Type: AWS::EC2::KeyPair::KeyName
+    Description: AMI ID to use
+    Type: AWS::EC2::Image::Id
+    Default: ami-002ab867b8b8591d5
   ClusterBaseStackName:
+    Description: The name of the cluster to build into
+    Type: String
+  BaseVPCStackName:
     Description: The name of the VPC to inherit from
     Type: String
 
@@ -92,73 +93,31 @@ Resources:
                 Action:
                   Ref: InstanceRoleActions
                 Effect: Allow
-              - Sid: AllowKMS
-                Effect: Allow
-                Action:
-                  - kms:CreateGrant
-                  - kms:Decrypt
-                  - kms:Describe*
-                  - kms:Encrypt
-                  - kms:GenerateDataKey*
-                  - kms:ReEncrypt*
-                Resource:
-                  Fn::ImportValue:
-                    Fn::Sub: ${ClusterBaseStackName}-KMSKeyArn
-
-  # Internal key eventually encrypting cluster secret
-  KMSKey:
-    Type: AWS::KMS::Key
-    Properties:
-      Description: KMS key for encrypting EBS and S3 for this cluster
-      Enabled: true
-      EnableKeyRotation: true
-      KeyPolicy:
-        Version: "2012-10-17"
-        Id: base-key
-        Statement:
-          - Sid: Enable IAM Permissions
-            Effect: Allow
-            Principal:
-              AWS:
-                Fn::Sub: arn:aws:iam::${AWS::AccountId}:root
-            Action: kms:*
-            Resource: "*"
-      Tags:
-        - Key: Name
-          Value:
-            Fn::Sub: ${AWS::StackName}-key
-        - Key: Owner
-          Value:
-            Ref: OwnerTag
-        - Key: Project
-          Value:
-            Ref: ProjectTag
-        - Key: Environment
-          Value:
-            Ref: EnvironmentTag
-  KMSKeyAlias:
-    Type: AWS::KMS::Alias
-    Properties:
-      AliasName:
-        Fn::Sub: alias/${AWS::StackName}-key
-      TargetKeyId:
-        Ref: KMSKey
+              # - Sid: AllowKMS
+              #   Effect: Allow
+              #   Action:
+              #     - kms:CreateGrant
+              #     - kms:Decrypt
+              #     - kms:Describe*
+              #     - kms:Encrypt
+              #     - kms:GenerateDataKey*
+              #     - kms:ReEncrypt*
+              #   Resource:
+              #     Fn::ImportValue:
+              #       Fn::Sub: ${ClusterBaseStackName}-KMSKeyName
 
   PublicAutoScalingGroup:
     Type: AWS::AutoScaling::AutoScalingGroup
     # Condition: PublicIPAs
     Properties:
-      LaunchConfigurationName: Launc
+      LaunchConfigurationName:
+        Ref: LaunchConfig
       AvailabilityZones:
         - Fn::ImportValue:
-            Fn::Sub: ${ClusterBaseStackName}-AvailabilityZone1
-        - Fn::ImportValue:
-            Fn::Sub: ${ClusterBaseStackName}-AvailabilityZone2
+            Fn::Sub: ${BaseVPCStackName}-AZ-1
       VPCZoneIdentifier:
         - Fn::ImportValue:
-            Fn::Sub: ${ClusterBaseStackName}-PublicSubnetId1
-        - Fn::ImportValue:
-            Fn::Sub: ${ClusterBaseStackName}-PublicSubnetId2
+            Fn::Sub: ${BaseVPCStackName}-PublicSubnetId1
       TerminationPolicies:
         - OldestInstance
       MinSize: "0"
@@ -212,7 +171,8 @@ Resources:
       IamInstanceProfile:
         Ref: WorkerRoleProfile
       KeyName:
-        Ref: KMSKeyName
+        Fn::ImportValue:
+          Fn::Sub: ${ClusterBaseStackName}-KMSKeyName
       SecurityGroups:
         - Fn::ImportValue:
             Fn::Sub: ${ClusterBaseStackName}-ClusterSGId
@@ -260,180 +220,3 @@ Resources:
       Path: /
       Roles:
         - Ref: WorkerIamRole
-          # - Ref: SecondarySecurityGroup
-  #     UserData:
-  #       Fn::Base64:
-  #         Fn::Join:
-  #         - ""
-  #         - - |+
-  #             #cloud-config
-  #           - |
-  #             write_files:
-  #           - |2
-  #               - path: /etc/environment
-  #           - |2
-  #                 permissions: 0644
-  #           - |2
-  #                 owner: root
-  #           - |2
-  #                 content: |
-  #           - |2
-  #                   COREOS_PUBLIC_IPV4=$public_ipv4
-  #           - |2
-  #                   COREOS_PRIVATE_IPV4=$private_ipv4
-  #           - |2
-  #               # global vars about the environment we're running in for this stack
-  #           - |2
-  #               # this is used by units in the cloud-init files specified below
-  #           - |2
-  #               - path: /etc/turbine_environment
-  #           - |2
-  #                 permissions: 0400
-  #           - |2
-  #                 owner: root
-  #           - |2
-  #                 content: |
-  #           - '      CLOUDINIT_INCL_URL='
-  #           - Ref: CloudInitInclUrl
-  #           - |2+
-  #           - '      CLOUDINIT_INCL_FILE='
-  #           - Ref: CloudInitInclFile
-  #           - |2+
-  #           - '      DISCOVERY_DNS_ZONE='
-  #           - Fn::ImportValue:
-  #               Fn::Sub: ${ClusterBaseStackName}-DiscoveryDnsZone
-  #           - |2+
-  #           - '      DISCOVERY_ZONE_PREFIX='
-  #           - Fn::ImportValue:
-  #               Fn::Sub: ${ClusterBaseStackName}-DiscoveryZonePrefix
-  #           - |2+
-  #           - '      APPLICATION_ENVIRONMENT='
-  #           - Fn::ImportValue:
-  #               Fn::Sub: ${ClusterBaseStackName}-ApplicationEnvironment
-  #           - |2+
-  #           - '      FLEET_ROLE='
-  #           - Ref: RoleTag
-  #           - |2+
-  #           - '      LOG_INDEX='
-  #           - Fn::ImportValue:
-  #               Fn::Sub: ${ClusterBaseStackName}-LogIndex
-  #           - |2+
-  #           - '      METRIC_KEY='
-  #           - Fn::ImportValue:
-  #               Fn::Sub: ${ClusterBaseStackName}-MetricKey
-  #           - |2+
-  #           - '      CONSUL_BOOTSTRAP='
-  #           - Ref: ConsulBootstrap
-  #           - |2+
-  #           - '      NOMAD_BOOTSTRAP='
-  #           - Ref: NomadBootstrap
-  #           - |2+
-  #           - '      REGION='
-  #           - Ref: AWS::Region
-  #           - |2+
-  #           - '      ACCOUNT_ID='
-  #           - Ref: AWS::AccountId
-  #           - |2+
-  #           - '      RESERVED_CPU='
-  #           - Fn::If:
-  #             - DefaultReservedCPU
-  #             - Fn::FindInMap:
-  #               - ReservedMap
-  #               - Ref: InstanceType
-  #               - cpu
-  #             - Ref: ReservedCPU
-  #           - |2+
-  #           - '      RESERVED_MEMORY='
-  #           - Fn::If:
-  #             - DefaultReservedMem
-  #             - Fn::FindInMap:
-  #               - ReservedMap
-  #               - Ref: InstanceType
-  #               - mem
-  #             - Ref: ReservedMem
-  #           - |2+
-  #           - |2
-  #               # customize the etcd2 unit
-  #           - |2
-  #               - path: /etc/systemd/system/etcd2.service.d/30-cloudinit.conf
-  #           - |2
-  #                 permissions: 0644
-  #           - |2
-  #                 content: |
-  #           - |2
-  #                   [Service]
-  #           - '      Environment="ETCD_DISCOVERY_SRV='
-  #           - Fn::ImportValue:
-  #               Fn::Sub: ${ClusterBaseStackName}-DiscoveryZonePrefix
-  #           - .
-  #           - Fn::ImportValue:
-  #               Fn::Sub: ${ClusterBaseStackName}-DiscoveryDnsZone
-  #           - |
-  #             "
-  #           - |2
-  #                   # this token will get replaced by the cloud-config lookup unit
-  #           - |2
-  #                   Environment="ETCD_NAME=_INSTANCE"
-  #           - '      Environment="ETCD_INITIAL_CLUSTER_STATE='
-  #           - Ref: EtcdInitialClusterState
-  #           - |
-  #             "
-  #           - |2
-  #               - path: /home/core/.dockercfg
-  #           - |2
-  #                 owner: core:core
-  #           - |2
-  #                 permissions: 0644
-  #           - |2
-  #                 content: |
-  #           - '      '
-  #           - Ref: DockerCfg
-  #           - |2+
-  #           - |
-  #             coreos:
-  #           - |2
-  #               units:
-  #           - |2
-  #                 - name: install-cloudinit-includes.service
-  #           - |2
-  #                   command: start
-  #           - |2
-  #                   content: |
-  #           - |2
-  #                     [Unit]
-  #           - |2
-  #                     Description=Cloudinit External Units
-  #           - |2
-  #                     AssertPathExists=/etc/environment
-  #           - |2
-  #                     AssertPathExists=/etc/turbine_environment
-  #           - |2
-  #                     [Service]
-  #           - |2
-  #                     Type=oneshot
-  #           - |2
-  #                     EnvironmentFile=/etc/environment
-  #           - |2
-  #                     EnvironmentFile=/etc/turbine_environment
-  #           - |2
-  #                     RemainAfterExit=yes
-  #           - |2
-  #                     # extra cloud-init files can be found at https://github.turbine.com/MGP-Server/cloud-config
-  #           - |2
-  #                     ExecStart=/usr/bin/bash -c '/usr/bin/coreos-cloudinit --from-url ${CLOUDINIT_INCL_URL}/${CLOUDINIT_INCL_FILE}'
-#   # Outputs:
-# iamRole:
-#   Type: AWS::IAM::Role
-#   Properties:
-#     Path:
-#     AssumeRolePolicyDocument:
-#     Policies:
-#       -
-#        PolicyName: "root"
-#        PolicyDocument:
-#          Version: "2012-10-17"
-#          Statement:
-#             -
-#               Effect: "Allow"
-#               Action: "*"
-#               Resource: "*"

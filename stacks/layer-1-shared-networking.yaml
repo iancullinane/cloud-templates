@@ -27,6 +27,11 @@ Parameters:
     ConstraintDescription: Must be a valid CIDR range in the form x.x.x.x/22
     Default: 10.20.4.0/22
 
+  AvailabilityZoneList:
+    Description: List of AZ's to support
+    Type: CommaDelimitedList
+    Default: us-east-2a,us-east-2b,us-east-2c
+
 # VPC and corresponding resources, this will cost money because of the NAT
 # gateways, this can be mitigated by removing the NAT gateway and whitelisting
 # IP addresses in the security group
@@ -172,16 +177,21 @@ Outputs:
   # natgatewaybid:
   #   Description: ID of NAT Gateway B
   #   Value: !Ref NatGatewayB
+  AvailabilityZone1:
+    Description: Availability Zone 1
+    Value:
+      Fn::Select:
+        - "0"
+        - Ref: AvailabilityZoneList
+    Export:
+      Name:
+        Fn::Sub: ${AWS::StackName}-AZ-1
   PublicRouteA:
     Description: ID of Public Route Table
     Value: !Ref RouteTablePublic
     Export: # added to export
-      Name: sharedinf-publicrt
-  PublicRouteB:
-    Description: ID of Private Route Table - A
-    Value: !Ref RouteTablePrivateA
-    Export: # added to export
-      Name: sharedinf-privaterta
+      Name:
+        Fn::Sub: ${AWS::StackName}-PublicSubnetId1
   # privateroutetableb:
   #   Description: ID of Private Route Table - B
   #   Value: !Ref RouteTablePrivateB
