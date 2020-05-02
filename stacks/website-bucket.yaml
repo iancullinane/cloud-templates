@@ -1,0 +1,81 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: A bucket to hold CloudFormation from Drone
+
+Parameters:
+  SiteName:
+    Description: Name of desired site name (will fail if we don't own it)
+    Type: String
+  HostedZoneID:
+    Description: The name of the hosted zone to use
+    Type: String
+    Default: Z2URBRDZG4MDWO
+  DomainParameter:
+    Description: The top level tld, must be owned already
+    Type: String
+  SubDomainParameter:
+    Description: The subdomain
+    Type: String
+  SslCertIdParameter:
+    Type: String
+    Description: Enter the ID of the ACM certificate to use.
+
+  # TODO::Inherit
+  OwnerTag:
+    Description: Value for the 'Owner' tag
+    Type: String
+  ProjectTag:
+    Description: Value for the 'Project' tag
+    Type: String
+  EnvironmentTag:
+    Description: Value for the 'Environment' tag
+    Type: String
+
+Resources:
+  CloudFrontDistribution:
+    Type: "AWS::CloudFront::Distribution"
+    Properties:
+      DistributionConfig: #required
+        Origins:
+          - DomainName:
+              Fn::Sub: ${SubDomainParameter}.${DomainParameter}
+            Id:
+              Fn::Sub: ${SubDomainParameter}.${DomainParameter}
+            CustomOriginConfig:
+              HTTPPort: 80
+              HTTPSPort: 443
+              OriginProtocolPolicy: https-only
+              OriginSSLProtocols:
+                - TLSv1
+                - TLSv1.1
+                - TLSv1.2
+                - SSLv3
+        Enabled: true
+        Comment:
+          !Join [
+            " ",
+            ["CloudFront distribution for ", !Ref DomainParameter, "stack"],
+          ]
+        HttpVersion: http2
+        Aliases:
+          - Fn::Sub: cdn-${SubDomainParameter}.${DomainParameter}
+        DefaultCacheBehavior:
+          AllowedMethods:
+            - GET
+            - HEAD
+            - OPTIONS
+          ForwardedValues:
+            QueryString: false
+          SmoothStreaming: false
+          TargetOriginId:
+            Fn::Sub: cdn-${SubDomainParameter}.${DomainParameter}
+          ViewerProtocolPolicy: allow-all
+        PriceClass: PriceClass_200
+
+  SiteBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      # AccessControl: BucketOwnerFullControl
+      BucketName:
+        Ref: SiteName
+      VersioningConfiguration:
+        Status: "Suspended"

@@ -6,7 +6,7 @@ Parameters:
   AMIId:
     Description: AMI ID to use
     Type: AWS::EC2::Image::Id
-    Default: ami-002ab867b8b8591d5
+    Default: ami-0e30f3d8cbc900ff4
   ClusterBaseStackName:
     Description: The name of the cluster to build into
     Type: String
@@ -170,9 +170,9 @@ Resources:
         Ref: InstanceType
       IamInstanceProfile:
         Ref: WorkerRoleProfile
-      KeyName:
-        Fn::ImportValue:
-          Fn::Sub: ${ClusterBaseStackName}-KMSKeyName
+      # KeyName:
+      #   Fn::ImportValue:
+      #     Fn::Sub: ${ClusterBaseStackName}-KMSKeyName
       SecurityGroups:
         - Fn::ImportValue:
             Fn::Sub: ${ClusterBaseStackName}-ClusterSGId

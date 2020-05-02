@@ -188,7 +188,7 @@ Outputs:
         Fn::Sub: ${AWS::StackName}-AZ-1
   PublicRouteA:
     Description: ID of Public Route Table
-    Value: !Ref RouteTablePublic
+    Value: !Ref SubnetPublicSharedA
     Export: # added to export
       Name:
         Fn::Sub: ${AWS::StackName}-PublicSubnetId1

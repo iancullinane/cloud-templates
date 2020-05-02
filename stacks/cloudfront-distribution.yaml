@@ -1,0 +1,70 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >
+  A template to deploy CloudFront stack
+Parameters:
+  StackTypeParameter:
+    Type: String
+    AllowedValues:
+      - tst
+      - staging
+      - www
+    Description: Enter Stack type (tst, staging or www).
+  SslCertIdParameter:
+    Type: String
+    Description: Enter the ID of the ACM certificate to use.
+Resources:
+  stackDistribution:
+    Type: "AWS::CloudFront::Distribution"
+    Properties:
+      DistributionConfig:
+        Origins:
+          - DomainName: !Join [".", [!Ref StackTypeParameter, synapse.org]]
+            Id: !Join ["", [cdn-, !Ref StackTypeParameter, .synapse.org]]
+            CustomOriginConfig:
+              HTTPPort: "80"
+              HTTPSPort: "443"
+              OriginProtocolPolicy: https-only
+              OriginSSLProtocols:
+                - TLSv1
+                - TLSv1.1
+                - TLSv1.2
+                - SSLv3
+        Enabled: "true"
+        Comment:
+          !Join [
+            " ",
+            ["CloudFront distribution for ", !Ref StackTypeParameter, "stack"],
+          ]
+        HttpVersion: http2
+        Aliases:
+          - !Join ["", [cdn-, !Ref StackTypeParameter, .synapse.org]]
+        DefaultCacheBehavior:
+          AllowedMethods:
+            - GET
+            - HEAD
+            - OPTIONS
+          ForwardedValues:
+            QueryString: "false"
+          SmoothStreaming: "false"
+          TargetOriginId:
+            !Join ["", [cdn-, !Ref StackTypeParameter, .synapse.org]]
+          ViewerProtocolPolicy: allow-all
+        PriceClass: PriceClass_All
+        ViewerCertificate:
+          AcmCertificateArn:
+            !Join [
+              "",
+              [
+                "arn:aws:acm:us-east-1:",
+                !Ref "AWS::AccountId",
+                ":certificate/",
+                !Ref SslCertIdParameter,
+              ],
+            ]
+          SslSupportMethod: sni-only
+Outputs:
+  CloudFrontDistributionId:
+    Description: The ID of the CF distribution
+    Value: Ref
+    Export:
+      Name: !Join ["-", ["CFDistID", !Ref StackTypeParameter]]
