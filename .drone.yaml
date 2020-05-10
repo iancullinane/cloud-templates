@@ -12,5 +12,5 @@ steps:
         from_secret: AWS-Key
       secret_key:
         from_secret: AWS-Secret
-      source: stacks/*
+      source: templates/*
       target: /
