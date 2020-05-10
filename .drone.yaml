@@ -13,4 +13,4 @@ steps:
       secret_key:
         from_secret: AWS-Secret
       source: stacks/*
-      target: /templates/
+      target: /

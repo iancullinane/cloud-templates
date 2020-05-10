@@ -27,15 +27,16 @@ Resources:
     Type: "AWS::IAM::Role"
     Properties:
       AssumeRolePolicyDocument:
-        Version: "2012-10-17"
+        Version: 2012-10-17
         Statement:
-          - Action: sts:AssumeRole
-            Effect: Allow
+          - Effect: Allow
             Principal:
               AWS: arn:aws:iam::346096930733:user/icullinane
+            Action:
+              - "sts:AssumeRole"
       Description: Permission for user icullinane to build things
       RoleName:
-        Fn::Sub: ${AWS::StackName}-CF-role
+        Fn::Sub: ${AWS::StackName}
       Tags:
         - Key: Name
           Value:
@@ -50,7 +51,7 @@ Resources:
           Value:
             Ref: EnvironmentTag
 
-  AllowAllAccess:
+  AllowCFNPolicy:
     Type: "AWS::IAM::Policy"
     Properties:
       PolicyName: CFNUsers #required
@@ -61,8 +62,6 @@ Resources:
             Action:
               - "cloudformation:*"
             Resource: "*"
-      Users:
-        - icullinane
       Roles:
         - Ref: CloudFormationRole
 
