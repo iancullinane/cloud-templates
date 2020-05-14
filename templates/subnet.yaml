@@ -12,10 +12,9 @@ Parameters:
     Type: String
     Default: ""
 
-  # CIDRBits:
-  #   Description: A value to pass to avoid CIDR conflicts
-  #   Type: Number
-  #   Default:
+  CIDRBits:
+    Description: A value to pass to avoid CIDR conflicts
+    Type: Number
 
   EnvID:
     Description: The VPC ID
@@ -65,7 +64,7 @@ Resources:
       VpcId:
         Ref: EnvID
       AvailabilityZone: !Select [1, !GetAZs ]
-      CidrBlock: !Select [0, !Cidr [!Ref EnvCIDR, 1, 8]]
+      CidrBlock: !Select [0, !Cidr [!Ref EnvCIDR, 1, !Ref CIDRBits]]
       Tags:
         - Key: Name
           Value:
@@ -82,7 +81,7 @@ Resources:
       VpcId:
         Ref: EnvID
       AvailabilityZone: !Select [2, !GetAZs ]
-      CidrBlock: !Select [0, !Cidr [!Ref EnvCIDR, 1, 8]]
+      CidrBlock: !Select [0, !Cidr [!Ref EnvCIDR, 2, !Ref CIDRBits]]
       Tags:
         - Key: Name
           Value:
