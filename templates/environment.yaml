@@ -8,7 +8,7 @@ Parameters:
     AllowedPattern: "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{1,2})"
     ConstraintDescription: Must be a valid CIDR range in the form x.x.x.x/16
     Default: 10.20.0.0/16
-
+    # 10.218.2.0/23,10.218.6.0/23,10.218.10.0/23
 # VPC and corresponding resources, this will cost money because of the NAT
 # gateways, this can be mitigated by removing the NAT gateway and whitelisting
 # IP addresses in the security group
@@ -36,6 +36,7 @@ Resources:
         EnvID: !Ref VPC
         EnvCIDR: !GetAtt VPC.CidrBlock
         NumberOfAZs: "1"
+        CIDRMap: 10.20.0.0/24,10.20.4.0/24,10.20.8.0/24
       TemplateURL: https://craft-cf-bucket.s3.us-east-2.amazonaws.com/templates/subnet.yaml
       TimeoutInMinutes: 10 # not required
 
@@ -46,6 +47,7 @@ Resources:
         EnvID: !Ref VPC
         EnvCIDR: !GetAtt VPC.CidrBlock
         NumberOfAZs: "1"
+        CIDRMap: 10.20.2.0/23,10.20.6.0/23,10.20.10.0/23
       TemplateURL: https://craft-cf-bucket.s3.us-east-2.amazonaws.com/templates/subnet.yaml
       TimeoutInMinutes: 10 # not required
 
