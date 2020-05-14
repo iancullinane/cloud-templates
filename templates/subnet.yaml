@@ -248,19 +248,18 @@ Resources:
           Value: private
         - Key: primary-az
           Value: !Select [2, !GetAZs ]
-
-Outputs:
-  RouteTable1:
-    Value: !Ref RouteTable1
-    Export:
-      Name: RouteTable1
-  RouteTable2:
-    Value: !Ref RouteTable2
-    Condition: Build2Private
-    Export:
-      Name: RouteTable3
-  RouteTable3:
-    Value: !Ref RouteTable3
-    Condition: Build3Private
-    Export:
-      Name: RouteTable3
+# Outputs:
+# RouteTable1:
+#   Value: !Ref RouteTable1
+#   Export:
+#     Name: RouteTable1
+# RouteTable2:
+#   Value: !Ref RouteTable2
+#   Condition: Build2Private
+#   Export:
+#     Name: RouteTable3
+# RouteTable3:
+#   Value: !Ref RouteTable3
+#   Condition: Build3Private
+#   Export:
+#     Name: RouteTable3
