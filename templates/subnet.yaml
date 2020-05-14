@@ -12,9 +12,10 @@ Parameters:
     Type: String
     Default: ""
 
-  CIDRBits:
-    Description: A value to pass to avoid CIDR conflicts
-    Type: Number
+  # CIDRBits:
+  #   Description: A value to pass to avoid CIDR conflicts
+  #   Type: Number
+  #   Default:
 
   EnvID:
     Description: The VPC ID
