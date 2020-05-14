@@ -213,6 +213,7 @@ Resources:
 
   PublicRoute:
     Type: AWS::EC2::Route
+    Condition: IsPublic
     Properties:
       RouteTableId:
         Ref: RouteTable1
