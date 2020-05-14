@@ -9,6 +9,10 @@ Parameters:
     ConstraintDescription: Must be a valid CIDR range in the form x.x.x.x/16
     Default: 10.20.0.0/16
 
+  StackName:
+    Description: Name
+    Type: String
+
 # VPC and corresponding resources, this will cost money because of the NAT
 # gateways, this can be mitigated by removing the NAT gateway and whitelisting
 # IP addresses in the security group
@@ -36,7 +40,7 @@ Resources:
         EnvID: !Ref VPC
         EnvCIDR: !GetAtt VPC.CidrBlock
         NumberOfAZs: "3"
-      TemplateURL: String # required
+      TemplateURL: !Sub https://craft-cf-bucket.s3-us-east-2.amazonaws.com/templates/${StackName}.yaml
       TimeoutInMinutes: 10 # not required
 
   PrivateSubnet:
@@ -46,7 +50,7 @@ Resources:
         EnvID: !Ref VPC
         EnvCIDR: !GetAtt VPC.CidrBlock
         NumberOfAZs: "3"
-      TemplateURL: String # required
+      TemplateURL: !Sub https://craft-cf-bucket.s3-us-east-2.amazonaws.com/templates/${StackName}.yaml
       TimeoutInMinutes: 10 # not required
 
 Outputs:
