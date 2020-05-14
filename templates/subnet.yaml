@@ -12,6 +12,10 @@ Parameters:
     Type: String
     Default: ""
 
+  # CIDRBits:
+  #   Description: A value to pass to avoid CIDR conflicts
+  #   Type: Number
+
   EnvID:
     Description: The VPC ID
     Type: String
@@ -21,11 +25,12 @@ Parameters:
     Type: String
 
   NumberOfAZs:
-    Type: Number
+    Type: String
     AllowedValues:
       - "1"
       - "2"
       - "3"
+    Default: "2"
     Description: How many Availability Zones do you wish to utilize?
 
 Conditions:
@@ -51,7 +56,7 @@ Conditions:
       - !Equals [!Ref NumberOfAZs, "3"]
 
   # The CIDR '10.20.0.0/29' is invalid. (Service: AmazonEC2; Status Code: 400; Error Code: InvalidSubnet.Range; Request ID: 6c396996-28d9-4a37-96c0-d253a84fda7a)
-#  10.20.0.0/16
+
 Resources:
   Subnet1:
     Type: AWS::EC2::Subnet
@@ -59,7 +64,7 @@ Resources:
       VpcId:
         Ref: EnvID
       AvailabilityZone: !Select [1, !GetAZs ]
-      CidrBlock: !Select [0, !Cidr [!Ref EnvCIDR, 1, 16]]
+      CidrBlock: !Select [0, !Cidr [!Ref EnvCIDR, 1, 18]]
       Tags:
         - Key: Name
           Value:
@@ -76,7 +81,7 @@ Resources:
       VpcId:
         Ref: EnvID
       AvailabilityZone: !Select [2, !GetAZs ]
-      CidrBlock: !Select [1, !Cidr [!Ref EnvCIDR, 1, 17]]
+      CidrBlock: !Select [0, !Cidr [!Ref EnvCIDR, 1, 19]]
       Tags:
         - Key: Name
           Value:
@@ -93,7 +98,7 @@ Resources:
       VpcId:
         Ref: EnvID
       AvailabilityZone: !Select [2, !GetAZs ]
-      CidrBlock: !Select [2, !Cidr [!Ref EnvCIDR, 1, 18]]
+      CidrBlock: !Select [0, !Cidr [!Ref EnvCIDR, 3, 20]]
       Tags:
         - Key: Name
           Value:
