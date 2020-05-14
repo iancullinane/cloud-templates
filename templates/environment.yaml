@@ -33,7 +33,7 @@ Resources:
     Properties:
       Parameters:
         IsPublic: "Yes"
-        EnvID: !Ref: VPC
+        EnvID: !Ref VPC
         EnvCIDR: !GetAtt VPC.CidrBlock
         NumberOfAZs: "3"
       TemplateURL: String # required
