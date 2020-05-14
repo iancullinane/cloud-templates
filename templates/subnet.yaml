@@ -64,7 +64,7 @@ Resources:
       VpcId:
         Ref: EnvID
       AvailabilityZone: !Select [1, !GetAZs ]
-      CidrBlock: !Select [0, !Cidr [!Ref EnvCIDR, 1, 18]]
+      CidrBlock: !Select [0, !Cidr [!Ref EnvCIDR, 1, 4]]
       Tags:
         - Key: Name
           Value:
@@ -81,7 +81,7 @@ Resources:
       VpcId:
         Ref: EnvID
       AvailabilityZone: !Select [2, !GetAZs ]
-      CidrBlock: !Select [0, !Cidr [!Ref EnvCIDR, 1, 19]]
+      CidrBlock: !Select [1, !Cidr [!Ref EnvCIDR, 1, 5]]
       Tags:
         - Key: Name
           Value:
@@ -98,7 +98,7 @@ Resources:
       VpcId:
         Ref: EnvID
       AvailabilityZone: !Select [2, !GetAZs ]
-      CidrBlock: !Select [0, !Cidr [!Ref EnvCIDR, 3, 20]]
+      CidrBlock: !Select [2, !Cidr [!Ref EnvCIDR, 3, 6]]
       Tags:
         - Key: Name
           Value:
