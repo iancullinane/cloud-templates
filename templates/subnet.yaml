@@ -56,6 +56,8 @@ Conditions:
       - Fn::Equals: [IsPublic, "No"]
       - !Equals [!Ref NumberOfAZs, "3"]
 
+  # The CIDR '10.20.0.0/29' is invalid. (Service: AmazonEC2; Status Code: 400; Error Code: InvalidSubnet.Range; Request ID: 6c396996-28d9-4a37-96c0-d253a84fda7a)
+
 Resources:
   Subnet1:
     Type: AWS::EC2::Subnet
@@ -63,7 +65,7 @@ Resources:
       VpcId:
         Ref: EnvID
       AvailabilityZone: !Select [1, !GetAZs ]
-      CidrBlock: !Select [0, !Cidr [!Ref EnvCIDR, 3, 3]]
+      CidrBlock: !Select [0, !Cidr [!Ref EnvCIDR, 3, 24]]
       Tags:
         - Key: Name
           Value:
@@ -80,7 +82,7 @@ Resources:
       VpcId:
         Ref: EnvID
       AvailabilityZone: !Select [2, !GetAZs ]
-      CidrBlock: !Select [0, !Cidr [!Ref EnvCIDR, 3, 6]]
+      CidrBlock: !Select [0, !Cidr [!Ref EnvCIDR, 3, 24]]
       Tags:
         - Key: Name
           Value:
