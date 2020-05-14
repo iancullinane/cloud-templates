@@ -23,35 +23,32 @@ Parameters:
   NumberOfAZs:
     Type: Number
     AllowedValues:
-      - 1
-      - 2
-      - 3
-    Default: 2
-    MinValue: 1
-    MaxValue: 256
+      - "1"
+      - "2"
+      - "3"
     Description: How many Availability Zones do you wish to utilize?
 
 Conditions:
-  Build2: !Not [!Equals [!Ref NumberOfAZs, 1]]
-  Build3: !Equals [!Ref NumberOfAZs, 3]
+  Build2: !Not [!Equals [!Ref NumberOfAZs, "1"]]
+  Build3: !Equals [!Ref NumberOfAZs, "3"]
   IsPublic: !Equals [!Ref IsPublic, "Yes"]
   IsPrivate: !Equals [!Ref IsPublic, "No"]
   Build2Public:
     "Fn::And":
       - Fn::Equals: [IsPublic, "Yes"]
-      - !Not [!Equals [!Ref NumberOfAZs, 1]]
+      - !Not [!Equals [!Ref NumberOfAZs, "1"]]
   Build3Public:
     "Fn::And":
       - Fn::Equals: [IsPublic, "Yes"]
-      - !Equals [!Ref NumberOfAZs, 3]
+      - !Equals [!Ref NumberOfAZs, "3"]
   Build2Private:
     "Fn::And":
       - Fn::Equals: [IsPublic, "No"]
-      - !Not [!Equals [!Ref NumberOfAZs, 1]]
+      - !Not [!Equals [!Ref NumberOfAZs, "1"]]
   Build3Private:
     "Fn::And":
       - Fn::Equals: [IsPublic, "No"]
-      - !Equals [!Ref NumberOfAZs, 3]
+      - !Equals [!Ref NumberOfAZs, "3"]
 
   # The CIDR '10.20.0.0/29' is invalid. (Service: AmazonEC2; Status Code: 400; Error Code: InvalidSubnet.Range; Request ID: 6c396996-28d9-4a37-96c0-d253a84fda7a)
 #  10.20.0.0/16
