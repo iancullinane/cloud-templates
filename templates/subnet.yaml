@@ -19,12 +19,6 @@ Parameters:
     Description: The CIDR range of the parent VPC
     AllowedPattern: '^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\/([0-9]|[1-2][0-9]|3[0-2]))$'
     Type: String
-  IsPublic:
-    Description: Whether or not to build public subnets
-    Type: String
-    AllowedValues: ["Yes", "No"]
-    Default: "No"
-
 
   NumberOfAZs:
     Type: String

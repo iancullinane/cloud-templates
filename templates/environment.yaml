@@ -33,6 +33,7 @@ Resources:
     Properties:
       Parameters:
         IsPublic: "Yes"
+        GatewayID: !Ref IGW
         EnvID: !Ref VPC
         EnvCIDR: !GetAtt VPC.CidrBlock
         NumberOfAZs: "1"
