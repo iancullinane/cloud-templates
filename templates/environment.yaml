@@ -36,7 +36,7 @@ Resources:
         GatewayID: !Ref IGW
         EnvID: !Ref VPC
         EnvCIDR: !GetAtt VPC.CidrBlock
-        SubnetBits: 24
+        SubnetBits: 16
         NumberOfAZs: "1"
       TemplateURL: https://craft-cf-bucket.s3.us-east-2.amazonaws.com/templates/subnet.yaml
       TimeoutInMinutes: 10 # not required
@@ -48,7 +48,7 @@ Resources:
         EnvID: !Ref VPC
         EnvCIDR: !GetAtt VPC.CidrBlock
         NumberOfAZs: "1"
-        SubnetBits: 23
+        SubnetBits: 15
       TemplateURL: https://craft-cf-bucket.s3.us-east-2.amazonaws.com/templates/subnet.yaml
       TimeoutInMinutes: 10 # not required
 
