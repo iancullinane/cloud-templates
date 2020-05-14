@@ -217,6 +217,8 @@ Resources:
         - Key: primary-az
           Value: !Select [1, !GetAZs ]
 
+  # Exactly one of [TransitGatewayId, NetworkInterfaceId, InstanceId, GatewayId, NatGatewayId, EgressOnlyInternetGatewayId, VpcPeeringConnectionId] must be specified and not empty
+
   PublicRoute:
     Type: AWS::EC2::Route
     Condition: IsPublic

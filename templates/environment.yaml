@@ -28,17 +28,17 @@ Resources:
       InternetGatewayId: !Ref IGW
       VpcId: !Ref VPC
 
-  PublicSubnet:
-    Type: AWS::CloudFormation::Stack # required
-    Properties:
-      Parameters:
-        IsPublic: "Yes"
-        EnvID: !Ref VPC
-        EnvCIDR: !GetAtt VPC.CidrBlock
-        NumberOfAZs: "1"
-        CIDRMap: 10.20.0.0/24,10.20.4.0/24,10.20.8.0/24
-      TemplateURL: https://craft-cf-bucket.s3.us-east-2.amazonaws.com/templates/subnet.yaml
-      TimeoutInMinutes: 10 # not required
+  # PublicSubnet:
+  #   Type: AWS::CloudFormation::Stack # required
+  #   Properties:
+  #     Parameters:
+  #       IsPublic: "Yes"
+  #       EnvID: !Ref VPC
+  #       EnvCIDR: !GetAtt VPC.CidrBlock
+  #       NumberOfAZs: "1"
+  #       CIDRMap: 10.20.0.0/24,10.20.4.0/24,10.20.8.0/24
+  #     TemplateURL: https://craft-cf-bucket.s3.us-east-2.amazonaws.com/templates/subnet.yaml
+  #     TimeoutInMinutes: 10 # not required
 
   PrivateSubnet:
     Type: AWS::CloudFormation::Stack # required
