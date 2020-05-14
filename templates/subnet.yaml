@@ -12,7 +12,7 @@ Parameters:
     Type: String
     Default: ""
 
-  CIDRBits:
+  SubnetBits:
     Description: A value to pass to avoid CIDR conflicts
     Type: Number
 
@@ -64,7 +64,7 @@ Resources:
       VpcId:
         Ref: EnvID
       AvailabilityZone: !Select [1, !GetAZs ]
-      CidrBlock: !Select [0, !Cidr [!Ref EnvCIDR, 1, !Ref CIDRBits]]
+      CidrBlock: !Select [0, !Cidr [!Ref EnvCIDR, 1, !Ref SubnetBits]]
       Tags:
         - Key: Name
           Value:
@@ -81,7 +81,7 @@ Resources:
       VpcId:
         Ref: EnvID
       AvailabilityZone: !Select [2, !GetAZs ]
-      CidrBlock: !Select [0, !Cidr [!Ref EnvCIDR, 2, !Ref CIDRBits]]
+      CidrBlock: !Select [0, !Cidr [!Ref EnvCIDR, 1, !Ref SubnetBits]]
       Tags:
         - Key: Name
           Value:
