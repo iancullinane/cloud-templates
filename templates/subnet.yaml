@@ -148,6 +148,7 @@ Resources:
       Domain: vpc
   NatGateway1:
     Type: AWS::EC2::NatGateway
+    Condition: IsPublic
     Properties:
       AllocationId:
         Fn::GetAtt:
@@ -157,7 +158,7 @@ Resources:
         Ref: Subnet1
   NatGateway2:
     Type: AWS::EC2::NatGateway
-    Condition: Build2Private
+    Condition: Build2Public
     Properties:
       AllocationId:
         Fn::GetAtt:
@@ -167,7 +168,7 @@ Resources:
         Ref: Subnet2
   NatGateway3:
     Type: AWS::EC2::NatGateway
-    Condition: Build3Private
+    Condition: Build3Public
     Properties:
       AllocationId:
         Fn::GetAtt:
@@ -177,7 +178,7 @@ Resources:
         Ref: Subnet3
   NatRoute1:
     Type: AWS::EC2::Route
-    Condition: IsPrivate
+    Condition: IsPublic
     Properties:
       RouteTableId:
         Ref: RouteTable1
