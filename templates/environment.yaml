@@ -36,7 +36,7 @@ Resources:
         EnvID: !Ref VPC
         EnvCIDR: !GetAtt VPC.CidrBlock
         NumberOfAZs: "3"
-      TemplateURL: s3://craft-cf-bucket/templates/subnet.yaml
+      TemplateURL: https://craft-cf-bucket.s3.us-east-2.amazonaws.com/subnet.yaml
       TimeoutInMinutes: 10 # not required
 
   PrivateSubnet:
@@ -46,7 +46,7 @@ Resources:
         EnvID: !Ref VPC
         EnvCIDR: !GetAtt VPC.CidrBlock
         NumberOfAZs: "3"
-      TemplateURL: s3://craft-cf-bucket/templates/subnet.yaml
+      TemplateURL: https://craft-cf-bucket.s3.us-east-2.amazonaws.com/subnet.yaml
       TimeoutInMinutes: 10 # not required
 
 Outputs:
