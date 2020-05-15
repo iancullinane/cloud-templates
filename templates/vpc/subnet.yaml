@@ -16,14 +16,14 @@ Parameters:
     Description: List of cidrs to pass in
     Type: CommaDelimitedList
 
-  EnvID:
+  VpcID:
     Description: The VPC ID
     Type: String
-  EnvCIDR:
-    Description: The CIDR range of the parent VPC
-    AllowedPattern: '^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\/([0-9]|[1-2][0-9]|3[0-2]))$'
-    Type: String
 
+  # EnvCIDR:
+  #   Description: The CIDR range of the parent VPC
+  #   AllowedPattern: '^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\/([0-9]|[1-2][0-9]|3[0-2]))$'
+  #   Type: String
   # NumberOfAZs:
   #   Type: String
   #   AllowedValues:
@@ -62,7 +62,7 @@ Resources:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId:
-        Ref: EnvID
+        Ref: VpcID
       AvailabilityZone: !Select [1, !GetAZs ]
       CidrBlock: !Select [0, !Ref CIDRMap]
       Tags:
