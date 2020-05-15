@@ -75,7 +75,7 @@ Resources:
     Properties:
       VpcId:
         Ref: VpcID
-      AvailabilityZone: !Select [1, !GetAZs ]
+      AvailabilityZone: !Select [0, !GetAZs ]
       CidrBlock: !Select [0, !Ref CIDRMap]
       Tags:
         - Key: Name
@@ -104,7 +104,7 @@ Resources:
     Properties:
       VpcId:
         Ref: VpcID
-      AvailabilityZone: !Select [2, !GetAZs ]
+      AvailabilityZone: !Select [1, !GetAZs ]
       CidrBlock: !Select [1, !Ref CIDRMap]
       Tags:
         - Key: Name
@@ -134,7 +134,7 @@ Resources:
     Properties:
       VpcId:
         Ref: VpcID
-      AvailabilityZone: !Select [3, !GetAZs ]
+      AvailabilityZone: !Select [2, !GetAZs ]
       CidrBlock: !Select [2, !Ref CIDRMap]
       Tags:
         - Key: Name
