@@ -53,7 +53,7 @@ Resources:
     Type: AWS::CloudFormation::Stack # required
     Properties:
       Parameters:
-        EnvID: !Ref VPC
+        VpcID: !Ref VPC
         EnvCIDR: !GetAtt VPC.CidrBlock
         NumberOfAZs: "3"
         CIDRMap: 10.20.2.0/23,10.20.6.0/23,10.20.10.0/23
