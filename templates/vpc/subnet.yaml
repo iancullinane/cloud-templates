@@ -104,8 +104,8 @@ Resources:
     Properties:
       VpcId:
         Ref: VpcID
-      AvailabilityZone: !Select [1, !GetAZs ]
-      CidrBlock: !Select [0, !Ref CIDRMap]
+      AvailabilityZone: !Select [2, !GetAZs ]
+      CidrBlock: !Select [1, !Ref CIDRMap]
       Tags:
         - Key: Name
           Value:
@@ -121,7 +121,7 @@ Resources:
     Condition: Build2
     Properties:
       Parameters:
-        SubnetID: !Ref Subnet1
+        SubnetID: !Ref Subnet2
         GatewayID: !Ref GatewayID
         RtbID: !Ref RouteTable
       TemplateURL: https://craft-cf-bucket.s3.us-east-2.amazonaws.com/templates/vpc/table.yaml
@@ -134,8 +134,8 @@ Resources:
     Properties:
       VpcId:
         Ref: VpcID
-      AvailabilityZone: !Select [1, !GetAZs ]
-      CidrBlock: !Select [0, !Ref CIDRMap]
+      AvailabilityZone: !Select [3, !GetAZs ]
+      CidrBlock: !Select [2, !Ref CIDRMap]
       Tags:
         - Key: Name
           Value:
@@ -151,7 +151,7 @@ Resources:
     Condition: Build3
     Properties:
       Parameters:
-        SubnetID: !Ref Subnet1
+        SubnetID: !Ref Subnet3
         GatewayID: !Ref GatewayID
         RtbID: !Ref RouteTable
       TemplateURL: https://craft-cf-bucket.s3.us-east-2.amazonaws.com/templates/vpc/table.yaml
