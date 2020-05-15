@@ -6,12 +6,12 @@ Parameters:
   # VpcId:
   #   Type: String
   #   Description: VpcId of your existing Virtual Private Cloud (VPC)
-  Subnet:
+  SubnetID:
     Type: String
     Description:
       SubnetId of an existing Public facing subnet in your Virtual Private
       Cloud (VPC)
-  RouteTable:
+  RtbID:
     Description: The route table to attach to
     Type: String
   # GateWay:
@@ -32,11 +32,11 @@ Resources:
           - NatGatewayEip
           - AllocationId
       SubnetId:
-        Ref: Subnet
+        Ref: SubnetID
 
   PrivateRoute:
     Type: AWS::EC2::Route
     Properties:
-      RouteTableId: !Ref RouteTable
+      RouteTableId: !Ref RtbID
       DestinationCidrBlock: 0.0.0.0/0
       InstanceId: !Ref NatGateway
