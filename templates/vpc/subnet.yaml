@@ -74,3 +74,23 @@ Resources:
             - Key: network
               Value: public
             - !Ref AWS::NoValue
+
+  RouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VpcID
+      Tags:
+        - "Fn::If":
+            - IsPublic
+            - Key: network
+              Value: public
+            - !Ref AWS::NoValue
+
+  # Despite their names, subnets are only "public" or "private" based on the definitions of their associated routing tables.
+  Route1: # Public route table has direct routing to IGW:
+    Condition: IsPublic
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref RouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref GatewayID
