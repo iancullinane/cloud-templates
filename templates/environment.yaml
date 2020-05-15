@@ -42,7 +42,7 @@ Resources:
       Parameters:
         IsPublic: "Yes"
         VpcID: !Ref VPC
-        GatewayID: !Ref IGW
+        # GatewayID: !Ref IGW
         # EnvCIDR: !GetAtt VPC.CidrBlock
         NumberOfAZs: "3"
         CIDRMap: 10.20.0.0/24,10.20.4.0/24,10.20.8.0/24
