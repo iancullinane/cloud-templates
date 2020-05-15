@@ -6,21 +6,12 @@ Parameters:
     Description: Requesting subnet
     Type: String
 
-  GatewayID:
-    Description: IGW
-    Type: String
   RtbID:
     Description: The route table to associate
     Type: String
 
 Resources:
   # Despite their names, subnets are only "public" or "private" based on the definitions of their associated routing tables.
-  Route: # Public route table has direct routing to IGW:
-    Type: AWS::EC2::Route
-    Properties:
-      RouteTableId: !Ref RtbID
-      DestinationCidrBlock: 0.0.0.0/0
-      GatewayId: !Ref GatewayID
 
   PublicSubnetARouteTableAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
