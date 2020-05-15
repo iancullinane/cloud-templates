@@ -24,20 +24,20 @@ Parameters:
   #   Description: The CIDR range of the parent VPC
   #   AllowedPattern: '^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\/([0-9]|[1-2][0-9]|3[0-2]))$'
   #   Type: String
-  # NumberOfAZs:
-  #   Type: String
-  #   AllowedValues:
-  #     - "1"
-  #     - "2"
-  #     - "3"
-  #   Default: "2"
-  #   Description: How many Availability Zones do you wish to utilize?
+  NumberOfAZs:
+    Type: String
+    AllowedValues:
+      - "1"
+      - "2"
+      - "3"
+    Default: "2"
+    Description: How many Availability Zones do you wish to utilize?
 
 Conditions:
   IsPublic: !Equals [!Ref IsPublic, "Yes"]
   IsPrivate: !Equals [!Ref IsPublic, "No"]
-#   Build2: !Not [!Equals [!Ref NumberOfAZs, "1"]]
-#   Build3: !Equals [!Ref NumberOfAZs, "3"]
+  Build2: !Not [!Equals [!Ref NumberOfAZs, "1"]]
+  Build3: !Equals [!Ref NumberOfAZs, "3"]
 #   Build2Public:
 #     "Fn::And":
 #       - Fn::Equals: [IsPublic, "Yes"]
@@ -58,7 +58,19 @@ Conditions:
 # The CIDR '10.20.0.0/29' is invalid. (Service: AmazonEC2; Status Code: 400; Error Code: InvalidSubnet.Range; Request ID: 6c396996-28d9-4a37-96c0-d253a84fda7a)
 
 Resources:
-  Subnet:
+  # route table
+  RouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VpcID
+      Tags:
+        - "Fn::If":
+            - IsPublic
+            - Key: network
+              Value: public
+            - !Ref AWS::NoValue
+  # subnets
+  Subnet1:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId:
@@ -75,22 +87,72 @@ Resources:
               Value: public
             - !Ref AWS::NoValue
 
-  RouteTable:
-    Type: AWS::EC2::RouteTable
+  RouteAssoc1:
+    Type: AWS::CloudFormation::Stack # required
     Properties:
-      VpcId: !Ref VpcID
+      Parameters:
+        SubnetID: !Ref Subnet1
+        GatewayID: !Ref GatewayID
+        RtbID: !Ref RouteTable
+      TemplateURL: https://craft-cf-bucket.s3.us-east-2.amazonaws.com/templates/vpc/table.yaml
+      TimeoutInMinutes: 10 # not required
+
+  # subnets
+  Subnet2:
+    Type: AWS::EC2::Subnet
+    Condition: Build2
+    Properties:
+      VpcId:
+        Ref: VpcID
+      AvailabilityZone: !Select [1, !GetAZs ]
+      CidrBlock: !Select [0, !Ref CIDRMap]
       Tags:
+        - Key: Name
+          Value:
+            Fn::Sub: ${AWS::StackName}-subnet
         - "Fn::If":
             - IsPublic
             - Key: network
               Value: public
             - !Ref AWS::NoValue
 
-  # Despite their names, subnets are only "public" or "private" based on the definitions of their associated routing tables.
-  Route1: # Public route table has direct routing to IGW:
-    Condition: IsPublic
-    Type: AWS::EC2::Route
+  RouteAssoc2:
+    Type: AWS::CloudFormation::Stack # required
+    Condition: Build2
     Properties:
-      RouteTableId: !Ref RouteTable
-      DestinationCidrBlock: 0.0.0.0/0
-      GatewayId: !Ref GatewayID
+      Parameters:
+        SubnetID: !Ref Subnet1
+        GatewayID: !Ref GatewayID
+        RtbID: !Ref RouteTable
+      TemplateURL: https://craft-cf-bucket.s3.us-east-2.amazonaws.com/templates/vpc/table.yaml
+      TimeoutInMinutes: 10 # not required
+
+  # subnets
+  Subnet3:
+    Type: AWS::EC2::Subnet
+    Condition: Build3
+    Properties:
+      VpcId:
+        Ref: VpcID
+      AvailabilityZone: !Select [1, !GetAZs ]
+      CidrBlock: !Select [0, !Ref CIDRMap]
+      Tags:
+        - Key: Name
+          Value:
+            Fn::Sub: ${AWS::StackName}-subnet
+        - "Fn::If":
+            - IsPublic
+            - Key: network
+              Value: public
+            - !Ref AWS::NoValue
+
+  RouteAssoc3:
+    Type: AWS::CloudFormation::Stack # required
+    Condition: Build3
+    Properties:
+      Parameters:
+        SubnetID: !Ref Subnet1
+        GatewayID: !Ref GatewayID
+        RtbID: !Ref RouteTable
+      TemplateURL: https://craft-cf-bucket.s3.us-east-2.amazonaws.com/templates/vpc/table.yaml
+      TimeoutInMinutes: 10 # not required
