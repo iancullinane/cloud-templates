@@ -220,15 +220,15 @@ Resources:
 
   # Exactly one of [TransitGatewayId, NetworkInterfaceId, InstanceId, GatewayId, NatGatewayId, EgressOnlyInternetGatewayId, VpcPeeringConnectionId] must be specified and not empty
 
-  PublicRoute:
-    Type: AWS::EC2::Route
-    Condition: IsPublic
-    Properties:
-      RouteTableId:
-        Ref: RouteTable1
-      DestinationCidrBlock: 0.0.0.0/0
-      GatewayId:
-        Ref: GatewayID
+  # PublicRoute:
+  #   Type: AWS::EC2::Route
+  #   Condition: IsPublic
+  #   Properties:
+  #     RouteTableId:
+  #       Ref: RouteTable1
+  #     DestinationCidrBlock: 0.0.0.0/0
+  #     GatewayId:
+  #       Ref: GatewayID
 
   RouteTable2:
     Type: AWS::EC2::RouteTable

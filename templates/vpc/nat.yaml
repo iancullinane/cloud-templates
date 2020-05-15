@@ -1,0 +1,42 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description:
+  Builds a NAT host. **WARNING** This template creates Amazon EC2 instance(s).
+  You will be billed for the AWS resources used if you create a stack from this template.
+Parameters:
+  VpcId:
+    Type: String
+    Description: VpcId of your existing Virtual Private Cloud (VPC)
+  Subnet:
+    Type: String
+    Description:
+      SubnetId of an existing Public facing subnet in your Virtual Private
+      Cloud (VPC)
+  RouteTable:
+    Description: The route table to attach to
+    Type: String
+  GateWay:
+    Description: ID for the igw on the environment
+    Type: String
+
+Resources:
+  NatGatewayEip:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+
+  NatGateway:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId:
+        Fn::GetAtt:
+          - NatGatewayEip
+          - AllocationId
+      SubnetId:
+        Ref: Subnet
+
+  PrivateRoute:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref RouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      InstanceId: !Ref NatGateway
