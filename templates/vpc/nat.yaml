@@ -14,9 +14,9 @@ Parameters:
   RtbID:
     Description: The route table to attach to
     Type: String
-  # GateWay:
-  #   Description: ID for the igw on the environment
-  #   Type: String
+  GateWayID:
+    Description: ID for the igw on the environment
+    Type: String
 
 Resources:
   NatGatewayEip:
