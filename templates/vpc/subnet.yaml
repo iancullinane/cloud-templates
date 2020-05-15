@@ -105,6 +105,7 @@ Resources:
       Parameters:
         SubnetID: !Ref Subnet1
         RtbID: !Ref RouteTable
+        GatewayID: !Ref GatewayID
       TemplateURL: https://craft-cf-bucket.s3.us-east-2.amazonaws.com/templates/vpc/nat.yaml
       TimeoutInMinutes: 10 # not required
 
@@ -144,6 +145,7 @@ Resources:
       Parameters:
         SubnetID: !Ref Subnet1
         RtbID: !Ref RouteTable
+        GatewayID: !Ref GatewayID
       TemplateURL: https://craft-cf-bucket.s3.us-east-2.amazonaws.com/templates/vpc/nat.yaml
       TimeoutInMinutes: 10 # not required
 
@@ -183,5 +185,6 @@ Resources:
       Parameters:
         SubnetID: !Ref Subnet3
         RtbID: !Ref RouteTable
+        GatewayID: !Ref GatewayID
       TemplateURL: https://craft-cf-bucket.s3.us-east-2.amazonaws.com/templates/vpc/nat.yaml
       TimeoutInMinutes: 10 # not required

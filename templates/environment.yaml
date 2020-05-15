@@ -28,14 +28,6 @@ Resources:
       InternetGatewayId: !Ref IGW
       VpcId: !Ref VPC
 
-  # PublicRouteTable:
-  #   Type: AWS::EC2::RouteTable
-  #   Properties:
-  #     VpcId: !Ref VPC
-  #     Tags:
-  #       - Key: network
-  #         Value: public
-
   PublicSubnet:
     Type: AWS::CloudFormation::Stack # required
     Properties:
