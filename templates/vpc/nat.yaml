@@ -3,9 +3,9 @@ Description:
   Builds a NAT host. **WARNING** This template creates Amazon EC2 instance(s).
   You will be billed for the AWS resources used if you create a stack from this template.
 Parameters:
-  VpcId:
-    Type: String
-    Description: VpcId of your existing Virtual Private Cloud (VPC)
+  # VpcId:
+  #   Type: String
+  #   Description: VpcId of your existing Virtual Private Cloud (VPC)
   Subnet:
     Type: String
     Description:
@@ -14,9 +14,9 @@ Parameters:
   RouteTable:
     Description: The route table to attach to
     Type: String
-  GateWay:
-    Description: ID for the igw on the environment
-    Type: String
+  # GateWay:
+  #   Description: ID for the igw on the environment
+  #   Type: String
 
 Resources:
   NatGatewayEip:

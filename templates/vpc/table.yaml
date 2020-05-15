@@ -13,7 +13,7 @@ Parameters:
 Resources:
   # Despite their names, subnets are only "public" or "private" based on the definitions of their associated routing tables.
 
-  PublicSubnetARouteTableAssociation:
+  RouteTableAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
       SubnetId: !Ref SubnetID

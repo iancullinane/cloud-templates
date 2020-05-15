@@ -34,26 +34,27 @@ Parameters:
     Description: How many Availability Zones do you wish to utilize?
 
 Conditions:
+  # BuildPublicB:         !Not [ !Equals [ !Ref NumberOfAZs, 1 ]]
+  # BuildPublicC:         !Equals [ !Ref NumberOfAZs, 3 ]
   IsPublic: !Equals [!Ref IsPublic, "Yes"]
   IsPrivate: !Equals [!Ref IsPublic, "No"]
-  Build2: !Not [!Equals [!Ref NumberOfAZs, "1"]]
-  Build3: !Equals [!Ref NumberOfAZs, "3"]
-#   Build2Public:
-#     "Fn::And":
-#       - Fn::Equals: [IsPublic, "Yes"]
-#       - !Not [!Equals [!Ref NumberOfAZs, "1"]]
-#   Build3Public:
-#     "Fn::And":
-#       - Fn::Equals: [IsPublic, "Yes"]
-#       - !Equals [!Ref NumberOfAZs, "3"]
-#   Build2Private:
-#     "Fn::And":
-#       - Fn::Equals: [IsPublic, "No"]
-#       - !Not [!Equals [!Ref NumberOfAZs, "1"]]
-#   Build3Private:
-#     "Fn::And":
-#       - Fn::Equals: [IsPublic, "No"]
-#       - !Equals [!Ref NumberOfAZs, "3"]
+  Build2: !Or
+    - !Not [!Equals [!Ref NumberOfAZs, "1"]]
+    - !And
+      - !Not [!Equals [!Ref NumberOfAZs, "1"]]
+      - !Equals [!Ref IsPublic, "No"]
+  Build3: !Or
+    - !Equals [!Ref NumberOfAZs, "3"]
+    - !And
+      - !Equals [!Ref NumberOfAZs, "3"]
+      - !Equals [!Ref IsPublic, "No"]
+  BuildPrivate1: !Equals [!Ref IsPublic, "No"]
+  BuildPrivate2: !And
+    - !Not [!Equals [!Ref NumberOfAZs, "1"]]
+    - !Equals [!Ref IsPublic, "No"]
+  BuildPrivate3: !And
+    - !Equals [!Ref NumberOfAZs, "3"]
+    - !Equals [!Ref IsPublic, "No"]
 
 # The CIDR '10.20.0.0/29' is invalid. (Service: AmazonEC2; Status Code: 400; Error Code: InvalidSubnet.Range; Request ID: 6c396996-28d9-4a37-96c0-d253a84fda7a)
 
@@ -87,13 +88,24 @@ Resources:
               Value: public
             - !Ref AWS::NoValue
 
-  RouteAssoc1:
+  RouteAssoc1Public:
     Type: AWS::CloudFormation::Stack # required
+    Condition: IsPublic
     Properties:
       Parameters:
         SubnetID: !Ref Subnet1
         RtbID: !Ref RouteTable
       TemplateURL: https://craft-cf-bucket.s3.us-east-2.amazonaws.com/templates/vpc/table.yaml
+      TimeoutInMinutes: 10 # not required
+
+  RouteAssoc1Private:
+    Type: AWS::CloudFormation::Stack # required
+    Condition: BuildPrivate1
+    Properties:
+      Parameters:
+        SubnetID: !Ref Subnet1
+        RtbID: !Ref RouteTable
+      TemplateURL: https://craft-cf-bucket.s3.us-east-2.amazonaws.com/templates/vpc/nat.yaml
       TimeoutInMinutes: 10 # not required
 
   # subnets
@@ -115,14 +127,24 @@ Resources:
               Value: public
             - !Ref AWS::NoValue
 
-  RouteAssoc2:
+  RouteAssoc2Public:
     Type: AWS::CloudFormation::Stack # required
-    Condition: Build2
+    Condition: IsPublic
     Properties:
       Parameters:
-        SubnetID: !Ref Subnet2
+        SubnetID: !Ref Subnet1
         RtbID: !Ref RouteTable
       TemplateURL: https://craft-cf-bucket.s3.us-east-2.amazonaws.com/templates/vpc/table.yaml
+      TimeoutInMinutes: 10 # not required
+
+  RouteAssoc2Private:
+    Type: AWS::CloudFormation::Stack # required
+    Condition: BuildPrivate2
+    Properties:
+      Parameters:
+        SubnetID: !Ref Subnet1
+        RtbID: !Ref RouteTable
+      TemplateURL: https://craft-cf-bucket.s3.us-east-2.amazonaws.com/templates/vpc/nat.yaml
       TimeoutInMinutes: 10 # not required
 
   # subnets
@@ -144,12 +166,22 @@ Resources:
               Value: public
             - !Ref AWS::NoValue
 
-  RouteAssoc3:
+  RouteAssoc3Public:
     Type: AWS::CloudFormation::Stack # required
-    Condition: Build3
+    Condition: IsPublic
     Properties:
       Parameters:
         SubnetID: !Ref Subnet3
         RtbID: !Ref RouteTable
       TemplateURL: https://craft-cf-bucket.s3.us-east-2.amazonaws.com/templates/vpc/table.yaml
+      TimeoutInMinutes: 10 # not required
+
+  RouteAssoc3Private:
+    Type: AWS::CloudFormation::Stack # required
+    Condition: BuildPrivate3
+    Properties:
+      Parameters:
+        SubnetID: !Ref Subnet3
+        RtbID: !Ref RouteTable
+      TemplateURL: https://craft-cf-bucket.s3.us-east-2.amazonaws.com/templates/vpc/nat.yaml
       TimeoutInMinutes: 10 # not required
