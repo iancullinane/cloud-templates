@@ -39,16 +39,16 @@ Resources:
       TemplateURL: https://craft-cf-bucket.s3.us-east-2.amazonaws.com/templates/vpc/subnet.yaml
       TimeoutInMinutes: 10 # not required
 
-  PrivateSubnet:
-    Type: AWS::CloudFormation::Stack
-    Properties:
-      Parameters:
-        VpcID: !Ref VPC
-        GatewayID: !Ref IGW
-        NumberOfAZs: "3"
-        CIDRMap: 10.20.2.0/23,10.20.6.0/23,10.20.10.0/23
-      TemplateURL: https://craft-cf-bucket.s3.us-east-2.amazonaws.com/templates/vpc/subnet.yaml
-      TimeoutInMinutes: 10 # not required
+  # PrivateSubnet:
+  #   Type: AWS::CloudFormation::Stack
+  #   Properties:
+  #     Parameters:
+  #       VpcID: !Ref VPC
+  #       GatewayID: !Ref IGW
+  #       NumberOfAZs: "3"
+  #       CIDRMap: 10.20.2.0/23,10.20.6.0/23,10.20.10.0/23
+  #     TemplateURL: https://craft-cf-bucket.s3.us-east-2.amazonaws.com/templates/vpc/subnet.yaml
+  #     TimeoutInMinutes: 10 # not required
 
 Outputs:
   VpcId:
