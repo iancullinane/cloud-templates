@@ -3,23 +3,9 @@ Description: Shared Cluster Resources
 # Metadata:
 
 Parameters:
-  BaseVPCStackName:
+  BaseEnvStackName:
     Description: Cloudformation Stack that created the VPC
     Type: String
-
-  # TODO::Inherit
-  OwnerTag:
-    Description: Value for the 'Owner' tag
-    Type: String
-  ProjectTag:
-    Description: Value for the 'Project' tag
-    Type: String
-  EnvironmentTag:
-    Description: Value for the 'Environment' tag
-    Type: String
-# Mappings:
-
-# Conditions:
 
 Resources:
   # Allow resources in the cluster to speak to each other
@@ -30,18 +16,9 @@ Resources:
         - Key: Name
           Value:
             Fn::Sub: ${AWS::StackName}-cluster-sg
-        - Key: Owner
-          Value:
-            Ref: OwnerTag
-        - Key: Project
-          Value:
-            Ref: ProjectTag
-        - Key: Environment
-          Value:
-            Ref: EnvironmentTag
       VpcId:
         Fn::ImportValue:
-          Fn::Sub: ${BaseVPCStackName}-VPC-ID
+          Fn::Sub: ${BaseEnvStackName}-VpcId
       GroupDescription:
         Fn::Sub: ${AWS::StackName}-cluster-sg
       SecurityGroupIngress:
@@ -50,7 +27,7 @@ Resources:
           ToPort: 22
           CidrIp:
             Fn::ImportValue:
-              Fn::Sub: ${BaseVPCStackName}-CidrBlock
+              Fn::Sub: ${BaseEnvStackName}-CidrBlock
 
   ClusterSGIngressAllTcp:
     Type: AWS::EC2::SecurityGroupIngress
@@ -85,15 +62,6 @@ Resources:
         - Key: Name
           Value:
             Fn::Sub: ${AWS::StackName}-key
-        - Key: Owner
-          Value:
-            Ref: OwnerTag
-        - Key: Project
-          Value:
-            Ref: ProjectTag
-        - Key: Environment
-          Value:
-            Ref: EnvironmentTag
   KMSKeyAlias:
     Type: AWS::KMS::Alias
     Properties:
@@ -101,7 +69,6 @@ Resources:
         Fn::Sub: alias/${AWS::StackName}-key
       TargetKeyId:
         Ref: KMSKey
-
   # TODO::Eventually we want this automated, which would be this role
   # CloudFormationRole:
   #   Type: AWS::IAM::Role
@@ -152,49 +119,49 @@ Resources:
   #     ToPort: 8500
   #     CidrIp:
   #       Ref: DeployAgentCidr
-Outputs:
-  ClusterSGId:
-    Description: Cluster Security Group ID
-    Value:
-      Ref: ClusterSecurityGroup
-    Export:
-      Name:
-        Fn::Sub: ${AWS::StackName}-ClusterSGId
+# Outputs:
+# ClusterSGId:
+#   Description: Cluster Security Group ID
+#   Value:
+#     Ref: ClusterSecurityGroup
+#   Export:
+#     Name:
+#       Fn::Sub: ${AWS::StackName}-ClusterSGId
 
-  BaseVPCStackName:
-    Description: Name of VPC
-    Value:
-      Ref: BaseVPCStackName
-    Export:
-      Name:
-        Fn::Sub: ${AWS::StackName}-base-vpc
+# BaseVPCStackName:
+#   Description: Name of VPC
+#   Value:
+#     Ref: BaseVPCStackName
+#   Export:
+#     Name:
+#       Fn::Sub: ${AWS::StackName}-base-vpc
 
-  ClusterKMSKey:
-    Description: Name of the cluster KMS key
-    Value:
-      Ref: KMSKeyAlias
-    Export:
-      Name:
-        Fn::Sub: ${AWS::StackName}-KMSKeyName
+# ClusterKMSKey:
+#   Description: Name of the cluster KMS key
+#   Value:
+#     Ref: KMSKeyAlias
+#   Export:
+#     Name:
+#       Fn::Sub: ${AWS::StackName}-KMSKeyName
 
-  ProjectTag:
-    Description: Default Project Tag
-    Value:
-      Ref: ProjectTag
-    Export:
-      Name:
-        Fn::Sub: ${AWS::StackName}-ProjectTag
-  OwnerTag:
-    Description: Default Owner Tag
-    Value:
-      Ref: OwnerTag
-    Export:
-      Name:
-        Fn::Sub: ${AWS::StackName}-OwnerTag
-  EnvironmentTag:
-    Description: Default Environment Tag
-    Value:
-      Ref: EnvironmentTag
-    Export:
-      Name:
-        Fn::Sub: ${AWS::StackName}-EnvironmentTag
+# ProjectTag:
+#   Description: Default Project Tag
+#   Value:
+#     Ref: ProjectTag
+#   Export:
+#     Name:
+#       Fn::Sub: ${AWS::StackName}-ProjectTag
+# OwnerTag:
+#   Description: Default Owner Tag
+#   Value:
+#     Ref: OwnerTag
+#   Export:
+#     Name:
+#       Fn::Sub: ${AWS::StackName}-OwnerTag
+# EnvironmentTag:
+#   Description: Default Environment Tag
+#   Value:
+#     Ref: EnvironmentTag
+#   Export:
+#     Name:
+#       Fn::Sub: ${AWS::StackName}-EnvironmentTag

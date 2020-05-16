@@ -7,11 +7,11 @@ Parameters:
     Description: AMI ID to use
     Type: AWS::EC2::Image::Id
     Default: ami-0e30f3d8cbc900ff4
-  ClusterBaseStackName:
-    Description: The name of the cluster to build into
-    Type: String
-  BaseVPCStackName:
-    Description: The name of the VPC to inherit from
+  # EnvBaseStackName:
+  #   Description: Required for calls to ImportValue
+  #   Type: String
+  BaseEnvStackName:
+    Description: Required for calls to ImportValue
     Type: String
 
   # Pass the roles actions in config, not IaC
@@ -27,34 +27,6 @@ Parameters:
     Description: Size of root volumes
     Type: String
     Default: "8"
-
-  OwnerTag:
-    Description: Value for the 'Owner' tag
-    Type: String
-    Default: ""
-  ProjectTag:
-    Description: Value for the 'Project' tag
-    Type: String
-    Default: ""
-  EnvironmentTag:
-    Description: Value for the 'Environment' tag
-    Type: String
-    Default: ""
-# Mappings:
-
-Conditions:
-  InheritOwnerTag:
-    Fn::Equals:
-      - Ref: OwnerTag
-      - ""
-  InheritProjectTag:
-    Fn::Equals:
-      - Ref: ProjectTag
-      - ""
-  InheritEnvironmentTag:
-    Fn::Equals:
-      - Ref: EnvironmentTag
-      - ""
 
 Resources:
   ClusterBaseIAMRole:
@@ -76,35 +48,10 @@ Resources:
             Fn::Sub: ${AWS::StackName}-cluster-policy
           PolicyDocument:
             Statement:
-              - Condition:
-                  ForAllValues:StringLike:
-                    ec2:ResourceTag:
-                      - Fn::If:
-                          - InheritOwnerTag
-                          - Fn::ImportValue:
-                              Fn::Sub: ${ClusterBaseStackName}-OwnerTag
-                          - Ref: OwnerTag
-                      - Fn::If:
-                          - InheritEnvironmentTag
-                          - Fn::ImportValue:
-                              Fn::Sub: ${ClusterBaseStackName}-EnvironmentTag
-                          - Ref: EnvironmentTag
-                Resource: "*"
-                Action:
-                  Ref: InstanceRoleActions
-                Effect: Allow
-              # - Sid: AllowKMS
-              #   Effect: Allow
-              #   Action:
-              #     - kms:CreateGrant
-              #     - kms:Decrypt
-              #     - kms:Describe*
-              #     - kms:Encrypt
-              #     - kms:GenerateDataKey*
-              #     - kms:ReEncrypt*
-              #   Resource:
-              #     Fn::ImportValue:
-              #       Fn::Sub: ${ClusterBaseStackName}-KMSKeyName
+              Resource: "*"
+              Action:
+                Ref: InstanceRoleActions
+              Effect: Allow
 
   PublicAutoScalingGroup:
     Type: AWS::AutoScaling::AutoScalingGroup
@@ -114,10 +61,10 @@ Resources:
         Ref: LaunchConfig
       AvailabilityZones:
         - Fn::ImportValue:
-            Fn::Sub: ${BaseVPCStackName}-AZ-1
+            Fn::Sub: ${BaseEnvStackName}-AZ-1
       VPCZoneIdentifier:
         - Fn::ImportValue:
-            Fn::Sub: ${BaseVPCStackName}-PublicSubnetId1
+            Fn::Sub: ${BaseEnvStackName}-PublicSubnetId1
       TerminationPolicies:
         - OldestInstance
       MinSize: "0"
@@ -126,30 +73,6 @@ Resources:
         - Key: Name
           Value:
             Fn::Sub: ${AWS::StackName}-pool
-          PropagateAtLaunch: true
-        - Key: Owner
-          Value:
-            Fn::If:
-              - InheritOwnerTag
-              - Fn::ImportValue:
-                  Fn::Sub: ${ClusterBaseStackName}-OwnerTag
-              - Ref: OwnerTag
-          PropagateAtLaunch: true
-        - Key: Project
-          Value:
-            Fn::If:
-              - InheritOwnerTag
-              - Fn::ImportValue:
-                  Fn::Sub: ${ClusterBaseStackName}-ProjectTag
-              - Ref: ProjectTag
-          PropagateAtLaunch: true
-        - Key: Environment
-          Value:
-            Fn::If:
-              - InheritEnvironmentTag
-              - Fn::ImportValue:
-                  Fn::Sub: ${ClusterBaseStackName}-EnvironmentTag
-              - Ref: EnvironmentTag
           PropagateAtLaunch: true
 
   LaunchConfig:
@@ -173,9 +96,9 @@ Resources:
       # KeyName:
       #   Fn::ImportValue:
       #     Fn::Sub: ${ClusterBaseStackName}-KMSKeyName
-      SecurityGroups:
-        - Fn::ImportValue:
-            Fn::Sub: ${ClusterBaseStackName}-ClusterSGId
+      # SecurityGroups:
+      #   - Fn::ImportValue:
+      #       Fn::Sub: ${ClusterBaseStackName}-ClusterSGId
 
   WorkerIamRole:
     Type: AWS::IAM::Role
@@ -196,23 +119,10 @@ Resources:
             Fn::Sub: ${AWS::StackName}-OS-policy
           PolicyDocument:
             Statement:
-              - Condition:
-                  ForAllValues:StringLike:
-                    ec2:ResourceTag:
-                      - Fn::If:
-                          - InheritOwnerTag
-                          - Fn::ImportValue:
-                              Fn::Sub: ${ClusterBaseStackName}-OwnerTag
-                          - Ref: OwnerTag
-                      - Fn::If:
-                          - InheritEnvironmentTag
-                          - Fn::ImportValue:
-                              Fn::Sub: ${ClusterBaseStackName}-EnvironmentTag
-                          - Ref: EnvironmentTag
-                Resource: "*"
-                Action:
-                  Ref: InstanceRoleActions
-                Effect: Allow
+              Resource: "*"
+              Action:
+                Ref: InstanceRoleActions
+              Effect: Allow
 
   WorkerRoleProfile:
     Type: AWS::IAM::InstanceProfile
