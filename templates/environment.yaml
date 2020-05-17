@@ -56,7 +56,7 @@ Outputs:
     Value: !Ref VPC
     Export: # added to export
       Name:
-        Fn::Sub: ${AWS::StackName}-VPC-ID
+        Fn::Sub: ${AWS::StackName}-VpcId
 
   CIDR:
     Description: CIDR value of the base vpc
