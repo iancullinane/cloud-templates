@@ -1,0 +1,28 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: CloudFormation IAM role
+
+Resources:
+  CloudFormationRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonEC2FullAccess
+        - arn:aws:iam::aws:policy/AmazonS3FullAccess
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: cloudformation.amazonaws.com
+            Action:
+              - "sts:AssumeRole"
+      Description: Allow a cloud role access
+      RoleName:
+        Fn::Sub: ${AWS::StackName}
+
+Outputs:
+  CFRoleArn:
+    Description: ARN of the CD role
+    Value: !GetAtt CloudFormationRole.Arn
+    Export:
+      Name: CFRoleArn
