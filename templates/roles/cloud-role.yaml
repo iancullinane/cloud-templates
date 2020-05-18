@@ -1,24 +1,37 @@
 AWSTemplateFormatVersion: 2010-09-09
 Description: CloudFormation IAM role
 
+Parameters:
+  # Pass the roles actions in config, not IaC
+  InstanceRoleActions:
+    Description: The comma separated list of actions for the instance iam role policy
+    Type: CommaDelimitedList
+    Default: "kms:TagResource,kms:CreateKey"
+
 Resources:
   CloudFormationRole:
-    Type: "AWS::IAM::Role"
+    Type: AWS::IAM::Role
     Properties:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/AmazonEC2FullAccess
         - arn:aws:iam::aws:policy/AmazonS3FullAccess
       AssumeRolePolicyDocument:
-        Version: 2012-10-17
         Statement:
           - Effect: Allow
             Principal:
               Service: cloudformation.amazonaws.com
             Action:
-              - "sts:AssumeRole"
-      Description: Allow a cloud role access
-      RoleName:
-        Fn::Sub: ${AWS::StackName}
+              - sts:AssumeRole
+
+      Policies:
+        - PolicyName:
+            Fn::Sub: ${AWS::StackName}-cf-policy
+          PolicyDocument:
+            Statement:
+              Resource: "*"
+              Action:
+                Ref: InstanceRoleActions
+              Effect: Allow
 
 Outputs:
   CFRoleArn:
