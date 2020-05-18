@@ -6,7 +6,7 @@ Parameters:
   InstanceRoleActions:
     Description: The comma separated list of actions for the instance iam role policy
     Type: CommaDelimitedList
-    Default: "kms:TagResource,kms:*,iam:GetRole"
+    Default: "kms:TagResource,kms:*,iam:GetRole,iam:CreateRole"
 
 Resources:
   CloudFormationRole:
