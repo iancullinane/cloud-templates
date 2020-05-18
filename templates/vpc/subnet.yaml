@@ -180,3 +180,19 @@ Resources:
         GatewayID: !Ref GatewayID
       TemplateURL: https://craft-cf-bucket.s3.us-east-2.amazonaws.com/templates/vpc/nat.yaml
       TimeoutInMinutes: 10 # not required
+
+Outputs:
+  PublicSubnetIdList:
+    Condition: IsPublic
+    Description: Public Subnet ID List
+    Value:
+      Fn::Sub: ${Subnet1},${Subnet2},${Subnet3}
+    Export:
+      Name:
+        Fn::Join:
+          - ""
+          - - Ref: Subnet1
+            - ","
+            - !If [Build2, !Ref Subnet2, !Ref AWS::NoValue]
+            - ","
+            - !If [Build3, !Ref Subnet3, !Ref AWS::NoValue]

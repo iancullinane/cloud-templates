@@ -1,0 +1,58 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Basic asg template
+
+Parameters:
+  AMIId:
+    Description: AMI ID to use
+    Type: AWS::EC2::Image::Id
+    Default: ami-0e30f3d8cbc900ff4
+
+  ASGWorkerProfile:
+    Description: ID of the worker instance profile
+    Type: String
+
+  AZ:
+    Type: String
+
+Resources:
+  AutoScalingGroup:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    # Condition: PublicIPAs
+    Properties:
+      LaunchConfigurationName:
+        Ref: LaunchConfig
+      AvailabilityZones:
+        - !Ref AZ
+      TerminationPolicies:
+        - OldestInstance
+      MinSize: "0"
+      MaxSize: "100"
+      Tags:
+        - Key: Name
+          Value:
+            Fn::Sub: ${AWS::StackName}-pool
+          PropagateAtLaunch: true
+
+  LaunchConfig:
+    Type: AWS::AutoScaling::LaunchConfiguration
+    Properties:
+      ImageId:
+        Ref: AMIId
+      AssociatePublicIpAddress: true
+      BlockDeviceMappings:
+        - DeviceName: /dev/xvda
+          Ebs:
+            VolumeSize: 10
+            VolumeType: gp2
+        - DeviceName: /dev/xvdb
+          VirtualName: ephemeral0
+      InstanceType: t2.micro
+      IamInstanceProfile:
+        Ref: ASGWorkerProfile
+      # KeyName:
+      #   Fn::ImportValue:
+      #     Fn::Sub: ${ClusterBaseStackName}-KMSKeyName
+      # SecurityGroups:
+      #   - Fn::ImportValue:
+      #       Fn::Sub: ${ClusterBaseStackName}-ClusterSGId
+# Outputs:
