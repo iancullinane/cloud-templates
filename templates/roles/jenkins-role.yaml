@@ -1,0 +1,41 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: CloudFormation IAM role
+
+Parameters:
+  # Pass the roles actions in config, not IaC
+  InstanceRoleActions:
+    Description: The comma separated list of actions for the instance iam role policy
+    Type: CommaDelimitedList
+    Default: "kms:TagResource,kms:*,iam:GetRole,iam:CreateRole,iam:PutRolePolicy,iam:DetachRolePolicy"
+
+Resources:
+  JenkinsRole:
+    Type: AWS::IAM::Role
+    Properties:
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonEC2FullAccess
+        - arn:aws:iam::aws:policy/AmazonS3FullAccess
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: cloudformation.amazonaws.com
+            Action:
+              - sts:AssumeRole
+
+      Policies:
+        - PolicyName:
+            Fn::Sub: ${AWS::StackName}-cf-policy
+          PolicyDocument:
+            Statement:
+              Resource: "*"
+              Action:
+                Ref: InstanceRoleActions
+              Effect: Allow
+
+Outputs:
+  CFRoleArn:
+    Description: ARN of the CD role
+    Value: !GetAtt JenkinsRole.Arn
+    Export:
+      Name: JenkinsRole
