@@ -1,0 +1,17 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: A bucket to hold CloudFormation from Drone
+
+Parameters:
+  BucketName:
+    Description: Name of desired site name (will fail if we don't own it)
+    Type: String
+
+Resources:
+  SiteBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      # AccessControl: BucketOwnerFullControl
+      BucketName:
+        Ref: SiteName
+      VersioningConfiguration:
+        Status: "Suspended"
