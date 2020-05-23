@@ -53,6 +53,7 @@ Resources:
         configSets:
           builder:
             - "configure_cfn"
+            - "install_resources"
         configure_cfn:
           files:
             /etc/cfn/hooks.d/cfn-auto-reloader.conf:
