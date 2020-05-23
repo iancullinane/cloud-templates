@@ -47,8 +47,6 @@ Resources:
           #!/bin/bash -xe
           # Ensure AWS CFN Bootstrap is the latest
           sudo yum update -y
-          # Install docker
-          sudo yum install docker -y
 
     Metadata:
       AWS::CloudFormation::Init:
@@ -84,7 +82,16 @@ Resources:
                 files:
                   - "/etc/cfn/cfn-hup.conf"
                   - "/etc/cfn/hooks.d/cfn-auto-reloader.conf"
-
+        install_resources:
+          packages:
+            yum:
+              java-1.8.0-openjdk: []
+              docker: []
+          services:
+            sysvinit:
+              docker:
+                enabled: true,
+                ensureRunning: true,
   GenericAZNLinuxWorker:
     Type: "AWS::EC2::SecurityGroup"
     Properties:
