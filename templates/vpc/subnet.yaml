@@ -186,13 +186,12 @@ Outputs:
     Condition: IsPublic
     Description: Public Subnet ID List
     Value:
-      Fn::Sub: ${Subnet1},${Subnet2},${Subnet3}
+      Fn::Join:
+        - ""
+        - - Ref: Subnet1
+          - ","
+          - !If [Build2, !Ref Subnet2, ""]
+          - ","
+          - !If [Build3, !Ref Subnet3, ""]
     Export:
-      Name:
-        Fn::Join:
-          - ""
-          - - Ref: Subnet1
-            - ","
-            - !If [Build2, !Ref Subnet2, !Ref AWS::NoValue]
-            - ","
-            - !If [Build3, !Ref Subnet3, !Ref AWS::NoValue]
+      Name: !Sub "${AWS::StackName}-PublicSubnetIdList"
