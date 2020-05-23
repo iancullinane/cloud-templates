@@ -39,7 +39,9 @@ Resources:
             - !Ref GenericAZNLinuxWorker
           SubnetId: !ImportValue
             Fn::Sub: "${BaseVPCStackName}-PublicSubnetId1"
-
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-worker"
       UserData:
         "Fn::Base64": |
           #!/bin/bash -xe

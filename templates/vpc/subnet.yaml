@@ -125,7 +125,7 @@ Resources:
     Condition: IsPublic
     Properties:
       Parameters:
-        SubnetID: !Ref Subnet1
+        SubnetID: !Ref Subnet2
         RtbID: !Ref RouteTable
       TemplateURL: https://craft-cf-bucket.s3.us-east-2.amazonaws.com/templates/vpc/table.yaml
       TimeoutInMinutes: 10 # not required
