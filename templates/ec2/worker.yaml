@@ -31,6 +31,7 @@ Resources:
     Properties:
       InstanceType: !Ref InstanceType
       ImageId: !Ref AMIID
+      KeyName: cert-key-e2
       NetworkInterfaces:
         - AssociatePublicIpAddress: true
           DeviceIndex: "0"
