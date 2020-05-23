@@ -1,7 +1,7 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Parameters:
   # The base CIDR range, subnets will need to be within this range
-  BaseVPC:
+  BaseVPCStackName:
     Type: String
     MinLength: 9
     MaxLength: 18
@@ -16,7 +16,7 @@ Resources:
   VPC:
     Type: "AWS::EC2::VPC"
     Properties:
-      CidrBlock: !Ref BaseVPC
+      CidrBlock: !Ref BaseVPCStackName
   IGW:
     Type: "AWS::EC2::InternetGateway"
 
@@ -65,14 +65,6 @@ Outputs:
     Export:
       Name:
         Fn::Sub: ${AWS::StackName}-PublicSubnetIdList
-
-  # PublicSubnetIdList:
-  #   Description: Public Subnet ID List
-  #   Value:
-  #     Fn::Sub: ${PublicSubnet.Outputs.Subnet1},${PublicSubnet.Outputs.Subnet2},${PublicSubnet.Outputs.Subnet3}
-  #   Export:
-  #     Name:
-  #       Fn::Sub: ${AWS::StackName}-PublicSubnetIdList
 
   CIDR:
     Description: CIDR value of the base vpc

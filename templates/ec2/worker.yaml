@@ -11,10 +11,6 @@ Parameters:
     Type: String
     Default: mgp-dev-vpc-base
 
-  JenkinsPublicKey:
-    Description: The RSA id key for the Jenkins master
-    Type: String
-
   InstanceType:
     Description: WebServer EC2 instance type
     Type: String
@@ -39,7 +35,7 @@ Resources:
         - AssociatePublicIpAddress: true
           DeviceIndex: "0"
           GroupSet:
-            - !Ref BuildAutomationSecurityGroup
+            - !Ref GenericAZNLinuxWorker
           SubnetId:
             Fn::ImportValue:
               Fn::Sub: ${BaseVPCStackName}-PublicSubnetId1
@@ -86,7 +82,7 @@ Resources:
                   - "/etc/cfn/cfn-hup.conf"
                   - "/etc/cfn/hooks.d/cfn-auto-reloader.conf"
 
-  BuildAutomationSecurityGroup:
+  GenericAZNLinuxWorker:
     Type: "AWS::EC2::SecurityGroup"
     Properties:
       VpcId:
