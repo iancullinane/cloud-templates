@@ -9,14 +9,26 @@ Parameters:
     ConstraintDescription: Must be a valid CIDR range in the form x.x.x.x/16
     Default: 10.20.0.0/16
 
+  EnableDNS:
+    Description: Whether or not to support public DNS
+    Type: String
+    AllowedValues: ["Yes", "No"]
+    Default: "No"
+
 # VPC and corresponding resources, this will cost money because of the NAT
 # gateways, this can be mitigated by removing the NAT gateway and whitelisting
 # IP addresses in the security group
+
+Conditions:
+  EnableDNS: !Equals [!Ref EnableDNS, "Yes"]
+
 Resources:
   VPC:
     Type: "AWS::EC2::VPC"
     Properties:
       CidrBlock: !Ref BaseVPC
+      EnableDnsSupport: !If [EnableDNS, true, false]
+      EnableDnsHostnames: !If [EnableDNS, true, false]
   IGW:
     Type: "AWS::EC2::InternetGateway"
 
