@@ -58,6 +58,22 @@ Outputs:
       Name:
         Fn::Sub: ${AWS::StackName}-VpcId
 
+  PublicSubnetIdList:
+    Description: Public Subnet ID List
+    Value:
+      Fn::Sub: ${PublicSubnet.Outputs.PublicSubnetIdList}
+    Export:
+      Name:
+        Fn::Sub: ${AWS::StackName}-PublicSubnetIdList
+
+  # PublicSubnetIdList:
+  #   Description: Public Subnet ID List
+  #   Value:
+  #     Fn::Sub: ${PublicSubnet.Outputs.Subnet1},${PublicSubnet.Outputs.Subnet2},${PublicSubnet.Outputs.Subnet3}
+  #   Export:
+  #     Name:
+  #       Fn::Sub: ${AWS::StackName}-PublicSubnetIdList
+
   CIDR:
     Description: CIDR value of the base vpc
     Value: !GetAtt VPC.CidrBlock

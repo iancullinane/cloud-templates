@@ -7,11 +7,17 @@ Parameters:
     Type: String
 
 Resources:
-  SiteBucket:
+  Bucket:
     Type: AWS::S3::Bucket
     Properties:
       # AccessControl: BucketOwnerFullControl
       BucketName:
-        Ref: SiteName
+        Ref: BucketName
       VersioningConfiguration:
         Status: "Suspended"
+
+  BucketPolicy:
+    Type: "AWS::S3::BucketPolicy"
+    Properties:
+      Bucket: !Ref Bucket #required
+      PolicyDocument: Json #required
