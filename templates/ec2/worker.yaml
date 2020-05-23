@@ -9,7 +9,7 @@ Parameters:
   BaseVPCStackName:
     Description: The name of the base VPC for network imports
     Type: String
-    Default: mgp-dev-vpc-base
+    Default: craft-dev
 
   InstanceType:
     Description: WebServer EC2 instance type
@@ -37,8 +37,15 @@ Resources:
           GroupSet:
             - !Ref GenericAZNLinuxWorker
           SubnetId:
-            Fn::ImportValue:
-              Fn::Sub: ${BaseVPCStackName}-PublicSubnetId1
+            Fn::Select:
+              [
+                0,
+                !Split [
+                  ",",
+                  Fn::ImportValue: !Sub "${BaseVPCStackName}-PublicSubnetIdList",
+                ],
+              ]
+
       UserData:
         "Fn::Base64": |
           #!/bin/bash -xe
