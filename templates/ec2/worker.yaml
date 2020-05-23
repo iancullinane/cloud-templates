@@ -36,15 +36,7 @@ Resources:
           DeviceIndex: "0"
           GroupSet:
             - !Ref GenericAZNLinuxWorker
-          SubnetId:
-            Fn::Select:
-              [
-                0,
-                !Split [
-                  ",",
-                  Fn::ImportValue: !Sub "${BaseVPCStackName}-PublicSubnetIdList",
-                ],
-              ]
+          SubnetId: !Sub "${BaseVPCStackName}-PublicSubnetId1"
 
       UserData:
         "Fn::Base64": |

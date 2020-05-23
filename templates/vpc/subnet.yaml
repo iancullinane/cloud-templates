@@ -182,16 +182,9 @@ Resources:
       TimeoutInMinutes: 10 # not required
 
 Outputs:
-  PublicSubnetIdList:
+  PublicSubnetId1:
     Condition: IsPublic
     Description: Public Subnet ID List
-    Value:
-      Fn::Join:
-        - ""
-        - - Ref: Subnet1
-          - ","
-          - !If [Build2, !Ref Subnet2, ""]
-          - ","
-          - !If [Build3, !Ref Subnet3, ""]
+    Value: !Ref Subnet1
     Export:
-      Name: !Sub "${AWS::StackName}-PublicSubnetIdList"
+      Name: !Sub "${AWS::StackName}-PublicSubnetId1"
