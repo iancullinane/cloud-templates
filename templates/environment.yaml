@@ -58,13 +58,13 @@ Outputs:
       Name:
         Fn::Sub: ${AWS::StackName}-VpcId
 
-  PublicSubnetIdList:
+  PublicSubnetId1:
     Description: Public Subnet ID List
     Value:
-      Fn::Sub: ${PublicSubnet.Outputs.PublicSubnetIdList}
+      Fn::Sub: ${PublicSubnet.Outputs.PublicSubnetId1}
     Export:
       Name:
-        Fn::Sub: ${AWS::StackName}-PublicSubnetIdList
+        Fn::Sub: ${AWS::StackName}-PublicSubnetId1
 
   CIDR:
     Description: CIDR value of the base vpc
