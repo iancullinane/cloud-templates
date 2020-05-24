@@ -1,0 +1,717 @@
+Parameters:
+  EnvironmentSize:
+    Type: String
+    Default: SMALL
+    AllowedValues:
+      - SMALL
+      - MEDIUM
+      - LARGE
+    Description: Select Environment Size (S,M,L)
+  DatabaseName:
+    Type: String
+    Default: wordpress
+  DatabaseUser:
+    Type: String
+    Default: wordpress
+  DatabasePassword:
+    Type: String
+    Default: w0rdpr355
+    NoEcho: true
+  TestString:
+    Type: String
+    Default: test9
+Mappings:
+  RegionMap:
+    us-east-2:
+      AMALINUX: ami-0cd3dfa4e37921605
+  InstanceSize:
+    SMALL:
+      "EC2": "t2.micro"
+      "DB": "db.t2.micro"
+    MEDIUM:
+      "EC2": "t2.small"
+      "DB": "db.t2.small"
+    LARGE:
+      "EC2": "t2.medium"
+      "DB": "db.t2.medium"
+
+Resources:
+  DB:
+    Type: "AWS::RDS::DBInstance"
+    Properties:
+      AllocatedStorage: "5"
+      StorageType: gp2
+      DBInstanceClass: !FindInMap [InstanceSize, !Ref EnvironmentSize, DB] # Dynamic mapping + Pseudo Parameter
+      DBName: !Ref DatabaseName
+      Engine: MySQL
+      MasterUsername: !Ref DatabaseUser
+      MasterUserPassword: !Ref DatabasePassword
+  EC2:
+    Type: "AWS::EC2::Instance"
+    Properties:
+      ImageId: !FindInMap [RegionMap, !Ref "AWS::Region", AMALINUX] # Dynamic mapping + Pseudo Parameter
+      InstanceType: !FindInMap [InstanceSize, !Ref EnvironmentSize, EC2]
+      KeyName: AdvancedCFN
+      UserData:
+        "Fn::Base64": !Sub |
+          #!/bin/bash
+          yum update -y aws-cfn-bootstrap # good practice - always do this.
+          /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource EC2 --configsets wordpress --region ${AWS::Region}
+          yum -y update
+    Metadata:
+      AWS::CloudFormation::Init:
+        configSets:
+          wordpress:
+            - "configure_cfn"
+            - "install_wordpress"
+            - "config_wordpress"
+        configure_cfn:
+          files:
+            /etc/cfn/hooks.d/cfn-auto-reloader.conf:
+              content: !Sub |
+                [cfn-auto-reloader-hook]
+                triggers=post.update
+                path=Resources.EC2.Metadata.AWS::CloudFormation::Init
+                action=/opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource EC2 --configsets wordpress --region ${AWS::Region}
+              mode: "000400"
+              owner: root
+              group: root
+            /etc/cfn/cfn-hup.conf:
+              content: !Sub |
+                [main]
+                stack=${AWS::StackId}
+                region=${AWS::Region}
+                verbose=true
+                interval=5
+              mode: "000400"
+              owner: root
+              group: root
+            /var/www/html/index2.html:
+              content: !Ref TestString
+          services:
+            sysvinit:
+              cfn-hup:
+                enabled: "true"
+                ensureRunning: "true"
+                files:
+                  - "/etc/cfn/cfn-hup.conf"
+                  - "/etc/cfn/hooks.d/cfn-auto-reloader.conf"
+        install_wordpress:
+          packages:
+            yum:
+              httpd: []
+              php: []
+              mysql: []
+              php-mysql: []
+          sources:
+            /var/www/html: "http://wordpress.org/latest.tar.gz"
+          services:
+            sysvinit:
+              httpd:
+                enabled: "true"
+                ensureRunning: "true"
+        config_wordpress:
+          commands:
+            01_clone_config:
+              cwd: "/var/www/html/wordpress"
+              test: "test ! -e /var/www/html/wordpress/wp-config.php"
+              command: "cp wp-config-sample.php wp-config.php"
+            02_inject_dbhost:
+              cwd: "/var/www/html/wordpress"
+              command: !Sub |
+                sed -i 's/localhost/${DB.Endpoint.Address}/g' wp-config.php
+            03_inject_dbname:
+              cwd: "/var/www/html/wordpress"
+              command: !Sub |
+                sed -i 's/database_name_here/${DatabaseName}/g' wp-config.php
+            04_inject_dbuser:
+              cwd: "/var/www/html/wordpress"
+              command: !Sub |
+                sed -i 's/username_here/${DatabaseUser}/g' wp-config.php
+            05_inject_dbpassword:
+              cwd: "/var/www/html/wordpress"
+              command: !Sub |
+                sed -i 's/password_here/${DatabasePassword}/g' wp-config.php
+  S3:
+    Type: "AWS::S3::Bucket"
+# AWSTemplateFormatVersion: "2010-09-09"
+# Description: VPC with public and private subnets, 3 AZ HA NAT
+# Parameters:
+#   VpcCidr:
+#     Description: CIDR address for the VPC to be created.
+#     Type: String
+#   PublicSubnetCidrList:
+#     Description: 3 comma separated CIDR blocks for public subnets
+#     Type: CommaDelimitedList
+#   PrivateSubnetCidrList:
+#     Description: 3 comma separated CIDR blocks for private subnets
+#     Type: CommaDelimitedList
+#   AvailabilityZoneList:
+#     Description: Comma-delimited list of three Availability Zone strings
+#     Type: CommaDelimitedList
+#   NatInstanceType:
+#     Description: Instance type for NAT nodes.
+#     Type: String
+#     Default: t2.micro
+#     AllowedValues:
+#       - t2.micro
+#       - t2.small
+#       - t2.medium
+#       - m3.medium
+#       - m3.large
+#       - m3.xlarge
+#       - m3.2xlarge
+#     ConstraintDescription: must be a valid EC2 instance type.
+#   OwnerTag:
+#     Description: Value for the 'Owner' tag
+#     Type: String
+#   ProjectTag:
+#     Description: Value for the 'Project' tag
+#     Type: String
+#   EnvironmentTag:
+#     Description: Value for the 'Environment' tag
+#     Type: String
+# Resources:
+#   Gateway:
+#     Type: AWS::EC2::InternetGateway
+#     Properties:
+#       Tags:
+#         - Key: Name
+#           Value:
+#             Fn::Sub: ${AWS::StackName}-gateway
+#         - Key: Owner
+#           Value:
+#             Ref: OwnerTag
+#         - Key: Project
+#           Value:
+#             Ref: ProjectTag
+#         - Key: Environment
+#           Value:
+#             Ref: EnvironmentTag
+#   AttachGateway:
+#     Type: AWS::EC2::VPCGatewayAttachment
+#     Properties:
+#       InternetGatewayId:
+#         Ref: Gateway
+#       VpcId:
+#         Ref: VPC
+#   VPC:
+#     Type: AWS::EC2::VPC
+#     Properties:
+#       Tags:
+#         - Key: Name
+#           Value:
+#             Ref: AWS::StackName
+#         - Key: Owner
+#           Value:
+#             Ref: OwnerTag
+#         - Key: Project
+#           Value:
+#             Ref: ProjectTag
+#         - Key: Environment
+#           Value:
+#             Ref: EnvironmentTag
+#       CidrBlock:
+#         Ref: VpcCidr
+#       EnableDnsHostnames: true
+#   PublicRouteTable:
+#     Type: AWS::EC2::RouteTable
+#     Properties:
+#       VpcId:
+#         Ref: VPC
+#       Tags:
+#         - Key: Name
+#           Value:
+#             Fn::Sub: ${AWS::StackName}-public-route-table
+#         - Key: Owner
+#           Value:
+#             Ref: OwnerTag
+#         - Key: Project
+#           Value:
+#             Ref: ProjectTag
+#         - Key: Environment
+#           Value:
+#             Ref: EnvironmentTag
+#   PublicRoute:
+#     Type: AWS::EC2::Route
+#     Properties:
+#       RouteTableId:
+#         Ref: PublicRouteTable
+#       DestinationCidrBlock: 0.0.0.0/0
+#       GatewayId:
+#         Ref: Gateway
+#   PublicSubnet1:
+#     Type: AWS::EC2::Subnet
+#     Properties:
+#       VpcId:
+#         Ref: VPC
+#       AvailabilityZone:
+#         Fn::Select:
+#           - "0"
+#           - Ref: AvailabilityZoneList
+#       CidrBlock:
+#         Fn::Select:
+#           - "0"
+#           - Ref: PublicSubnetCidrList
+#       Tags:
+#         - Key: Name
+#           Value:
+#             Fn::Sub: ${AWS::StackName}-public-subnet-1
+#         - Key: network
+#           Value: public
+#   PublicSubnet2:
+#     Type: AWS::EC2::Subnet
+#     Properties:
+#       VpcId:
+#         Ref: VPC
+#       AvailabilityZone:
+#         Fn::Select:
+#           - "1"
+#           - Ref: AvailabilityZoneList
+#       CidrBlock:
+#         Fn::Select:
+#           - "1"
+#           - Ref: PublicSubnetCidrList
+#       Tags:
+#         - Key: Name
+#           Value:
+#             Fn::Sub: ${AWS::StackName}-public-subnet-2
+#         - Key: network
+#           Value: public
+#   PublicSubnet3:
+#     Type: AWS::EC2::Subnet
+#     Properties:
+#       VpcId:
+#         Ref: VPC
+#       AvailabilityZone:
+#         Fn::Select:
+#           - "2"
+#           - Ref: AvailabilityZoneList
+#       CidrBlock:
+#         Fn::Select:
+#           - "2"
+#           - Ref: PublicSubnetCidrList
+#       Tags:
+#         - Key: Name
+#           Value:
+#             Fn::Sub: ${AWS::StackName}-public-subnet-3
+#         - Key: network
+#           Value: public
+#   PublicSubnet1Route:
+#     Type: AWS::EC2::SubnetRouteTableAssociation
+#     Properties:
+#       RouteTableId:
+#         Ref: PublicRouteTable
+#       SubnetId:
+#         Ref: PublicSubnet1
+#   PublicSubnet2Route:
+#     Type: AWS::EC2::SubnetRouteTableAssociation
+#     Properties:
+#       RouteTableId:
+#         Ref: PublicRouteTable
+#       SubnetId:
+#         Ref: PublicSubnet2
+#   PublicSubnet3Route:
+#     Type: AWS::EC2::SubnetRouteTableAssociation
+#     Properties:
+#       RouteTableId:
+#         Ref: PublicRouteTable
+#       SubnetId:
+#         Ref: PublicSubnet3
+#   PrivateRouteTable1:
+#     Type: AWS::EC2::RouteTable
+#     Properties:
+#       VpcId:
+#         Ref: VPC
+#       Tags:
+#         - Key: Name
+#           Value:
+#             Fn::Sub: ${AWS::StackName}-private-route-table-1
+#         - Key: network
+#           Value: private
+#         - Key: primary-az
+#           Value:
+#             Fn::Select:
+#               - "0"
+#               - Ref: AvailabilityZoneList
+#   PrivateRouteTable2:
+#     Type: AWS::EC2::RouteTable
+#     Properties:
+#       VpcId:
+#         Ref: VPC
+#       Tags:
+#         - Key: Name
+#           Value:
+#             Fn::Sub: ${AWS::StackName}-private-route-table-2
+#         - Key: network
+#           Value: private
+#         - Key: primary-az
+#           Value:
+#             Fn::Select:
+#               - "1"
+#               - Ref: AvailabilityZoneList
+#   PrivateRouteTable3:
+#     Type: AWS::EC2::RouteTable
+#     Properties:
+#       VpcId:
+#         Ref: VPC
+#       Tags:
+#         - Key: Name
+#           Value:
+#             Fn::Sub: ${AWS::StackName}-private-route-table-3
+#         - Key: network
+#           Value: private
+#         - Key: primary-az
+#           Value:
+#             Fn::Select:
+#               - "2"
+#               - Ref: AvailabilityZoneList
+#   PrivateSubnet1:
+#     Type: AWS::EC2::Subnet
+#     Properties:
+#       Tags:
+#         - Key: Name
+#           Value:
+#             Fn::Sub: ${AWS::StackName}-private-subnet-1
+#         - Key: Owner
+#           Value:
+#             Ref: OwnerTag
+#         - Key: Project
+#           Value:
+#             Ref: ProjectTag
+#         - Key: Environment
+#           Value:
+#             Ref: EnvironmentTag
+#       AvailabilityZone:
+#         Fn::Select:
+#           - "0"
+#           - Ref: AvailabilityZoneList
+#       CidrBlock:
+#         Fn::Select:
+#           - "0"
+#           - Ref: PrivateSubnetCidrList
+#       VpcId:
+#         Ref: VPC
+#   PrivateSubnet2:
+#     Type: AWS::EC2::Subnet
+#     Properties:
+#       Tags:
+#         - Key: Name
+#           Value:
+#             Fn::Sub: ${AWS::StackName}-private-subnet-2
+#         - Key: Owner
+#           Value:
+#             Ref: OwnerTag
+#         - Key: Project
+#           Value:
+#             Ref: ProjectTag
+#         - Key: Environment
+#           Value:
+#             Ref: EnvironmentTag
+#       AvailabilityZone:
+#         Fn::Select:
+#           - "1"
+#           - Ref: AvailabilityZoneList
+#       CidrBlock:
+#         Fn::Select:
+#           - "1"
+#           - Ref: PrivateSubnetCidrList
+#       VpcId:
+#         Ref: VPC
+#   PrivateSubnet3:
+#     Type: AWS::EC2::Subnet
+#     Properties:
+#       Tags:
+#         - Key: Name
+#           Value:
+#             Fn::Sub: ${AWS::StackName}-private-subnet-3
+#         - Key: Owner
+#           Value:
+#             Ref: OwnerTag
+#         - Key: Project
+#           Value:
+#             Ref: ProjectTag
+#         - Key: Environment
+#           Value:
+#             Ref: EnvironmentTag
+#       AvailabilityZone:
+#         Fn::Select:
+#           - "2"
+#           - Ref: AvailabilityZoneList
+#       CidrBlock:
+#         Fn::Select:
+#           - "2"
+#           - Ref: PrivateSubnetCidrList
+#       VpcId:
+#         Ref: VPC
+#   PrivateSubnet1RouteAssoc:
+#     Type: AWS::EC2::SubnetRouteTableAssociation
+#     Properties:
+#       RouteTableId:
+#         Ref: PrivateRouteTable1
+#       SubnetId:
+#         Ref: PrivateSubnet1
+#   PrivateSubnet2RouteAssoc:
+#     Type: AWS::EC2::SubnetRouteTableAssociation
+#     Properties:
+#       RouteTableId:
+#         Ref: PrivateRouteTable2
+#       SubnetId:
+#         Ref: PrivateSubnet2
+#   PrivateSubnet3RouteAssoc:
+#     Type: AWS::EC2::SubnetRouteTableAssociation
+#     Properties:
+#       RouteTableId:
+#         Ref: PrivateRouteTable3
+#       SubnetId:
+#         Ref: PrivateSubnet3
+#   NatGatewayEip1:
+#     Type: AWS::EC2::EIP
+#     Properties:
+#       Domain: vpc
+#     DependsOn: VPC
+#   NatGatewayEip2:
+#     Type: AWS::EC2::EIP
+#     Properties:
+#       Domain: vpc
+#     DependsOn: VPC
+#   NatGatewayEip3:
+#     Type: AWS::EC2::EIP
+#     Properties:
+#       Domain: vpc
+#     DependsOn: VPC
+#   NatGateway1:
+#     Type: AWS::EC2::NatGateway
+#     DependsOn: AttachGateway
+#     Properties:
+#       AllocationId:
+#         Fn::GetAtt:
+#           - NatGatewayEip1
+#           - AllocationId
+#       SubnetId:
+#         Ref: PublicSubnet1
+#   NatGateway2:
+#     Type: AWS::EC2::NatGateway
+#     DependsOn: AttachGateway
+#     Properties:
+#       AllocationId:
+#         Fn::GetAtt:
+#           - NatGatewayEip2
+#           - AllocationId
+#       SubnetId:
+#         Ref: PublicSubnet2
+#   NatGateway3:
+#     Type: AWS::EC2::NatGateway
+#     DependsOn: AttachGateway
+#     Properties:
+#       AllocationId:
+#         Fn::GetAtt:
+#           - NatGatewayEip3
+#           - AllocationId
+#       SubnetId:
+#         Ref: PublicSubnet3
+#   NatRoute1:
+#     Type: AWS::EC2::Route
+#     Properties:
+#       RouteTableId:
+#         Ref: PrivateRouteTable1
+#       DestinationCidrBlock: 0.0.0.0/0
+#       NatGatewayId:
+#         Ref: NatGateway1
+#   NatRoute2:
+#     Type: AWS::EC2::Route
+#     Properties:
+#       RouteTableId:
+#         Ref: PrivateRouteTable2
+#       DestinationCidrBlock: 0.0.0.0/0
+#       NatGatewayId:
+#         Ref: NatGateway2
+#   NatRoute3:
+#     Type: AWS::EC2::Route
+#     Properties:
+#       RouteTableId:
+#         Ref: PrivateRouteTable3
+#       DestinationCidrBlock: 0.0.0.0/0
+#       NatGatewayId:
+#         Ref: NatGateway3
+#   S3Endpoint:
+#     Type: AWS::EC2::VPCEndpoint
+#     Properties:
+#       RouteTableIds:
+#         - Ref: PublicRouteTable
+#         - Ref: PrivateRouteTable1
+#         - Ref: PrivateRouteTable2
+#         - Ref: PrivateRouteTable3
+#       ServiceName:
+#         Fn::Sub: com.amazonaws.${AWS::Region}.s3
+#       VpcId:
+#         Ref: VPC
+# Outputs:
+#   VpcId:
+#     Description: VPC ID.
+#     Value:
+#       Ref: VPC
+#     Export:
+#       Name:
+#         Fn::Sub: ${AWS::StackName}-VpcId
+#   VpcCidr:
+#     Description: VPC CIDR
+#     Value:
+#       Ref: VpcCidr
+#     Export:
+#       Name:
+#         Fn::Sub: ${AWS::StackName}-VpcCidr
+#   PublicRouteTable:
+#     Description: Public Route Table ID
+#     Value:
+#       Ref: PublicRouteTable
+#     Export:
+#       Name:
+#         Fn::Sub: ${AWS::StackName}-PublicRouteTable
+#   PrivateRouteTableIdList:
+#     Description: Private Route Table ID List
+#     Value:
+#       Fn::Join:
+#         - ""
+#         - - Ref: PrivateRouteTable1
+#           - ","
+#           - Ref: PrivateRouteTable2
+#           - ","
+#           - Ref: PrivateRouteTable3
+#     Export:
+#       Name:
+#         Fn::Sub: ${AWS::StackName}-PrivateRouteTableIdList
+#   PrivateRouteTable1:
+#     Description: Private Route Table ID 1
+#     Value:
+#       Ref: PrivateRouteTable1
+#     Export:
+#       Name:
+#         Fn::Sub: ${AWS::StackName}-PrivateRouteTable1
+#   PrivateRouteTable2:
+#     Description: Private Route Table ID 2
+#     Value:
+#       Ref: PrivateRouteTable2
+#     Export:
+#       Name:
+#         Fn::Sub: ${AWS::StackName}-PrivateRouteTable2
+#   PrivateRouteTable3:
+#     Description: Private Route Table ID 3
+#     Value:
+#       Ref: PrivateRouteTable3
+#     Export:
+#       Name:
+#         Fn::Sub: ${AWS::StackName}-PrivateRouteTable3
+#   PrivateSubnetIdList:
+#     Description: Private Subnet ID List
+#     Value:
+#       Fn::Sub: ${PrivateSubnet1},${PrivateSubnet2},${PrivateSubnet3}
+#     Export:
+#       Name:
+#         Fn::Sub: ${AWS::StackName}-PrivateSubnetIdList
+#   PrivateSubnetId1:
+#     Description: Private Subnet ID 1
+#     Value:
+#       Ref: PrivateSubnet1
+#     Export:
+#       Name:
+#         Fn::Sub: ${AWS::StackName}-PrivateSubnetId1
+#   PrivateSubnetId2:
+#     Description: Private Subnet ID 2
+#     Value:
+#       Ref: PrivateSubnet2
+#     Export:
+#       Name:
+#         Fn::Sub: ${AWS::StackName}-PrivateSubnetId2
+#   PrivateSubnetId3:
+#     Description: Private Subnet ID 3
+#     Value:
+#       Ref: PrivateSubnet3
+#     Export:
+#       Name:
+#         Fn::Sub: ${AWS::StackName}-PrivateSubnetId3
+#   PublicSubnetIdList:
+#     Description: Public Subnet ID List
+#     Value:
+#       Fn::Sub: ${PublicSubnet1},${PublicSubnet2},${PublicSubnet3}
+#     Export:
+#       Name:
+#         Fn::Sub: ${AWS::StackName}-PublicSubnetIdList
+#   PublicSubnetId1:
+#     Description: Public Subnet ID 1
+#     Value:
+#       Ref: PublicSubnet1
+#     Export:
+#       Name:
+#         Fn::Sub: ${AWS::StackName}-PublicSubnetId1
+#   PublicSubnetId2:
+#     Description: Public Subnet ID 2
+#     Value:
+#       Ref: PublicSubnet2
+#     Export:
+#       Name:
+#         Fn::Sub: ${AWS::StackName}-PublicSubnetId2
+#   PublicSubnetId3:
+#     Description: Public Subnet ID 3
+#     Value:
+#       Ref: PublicSubnet3
+#     Export:
+#       Name:
+#         Fn::Sub: ${AWS::StackName}-PublicSubnetId3
+#   AvailabilityZoneList:
+#     Description: List of Availability Zones used
+#     Value:
+#       Fn::Join:
+#         - ","
+#         - Ref: AvailabilityZoneList
+#     Export:
+#       Name:
+#         Fn::Sub: ${AWS::StackName}-AvailabilityZoneList
+#   AvailabilityZone1:
+#     Description: Availability Zone 1
+#     Value:
+#       Fn::Select:
+#         - "0"
+#         - Ref: AvailabilityZoneList
+#     Export:
+#       Name:
+#         Fn::Sub: ${AWS::StackName}-AvailabilityZone1
+#   AvailabilityZone2:
+#     Description: Availability Zone 2
+#     Value:
+#       Fn::Select:
+#         - "1"
+#         - Ref: AvailabilityZoneList
+#     Export:
+#       Name:
+#         Fn::Sub: ${AWS::StackName}-AvailabilityZone2
+#   AvailabilityZone3:
+#     Description: Availability Zone 3
+#     Value:
+#       Fn::Select:
+#         - "2"
+#         - Ref: AvailabilityZoneList
+#     Export:
+#       Name:
+#         Fn::Sub: ${AWS::StackName}-AvailabilityZone3
+#   ProjectTag:
+#     Description: Default Project Tag
+#     Value:
+#       Ref: ProjectTag
+#     Export:
+#       Name:
+#         Fn::Sub: ${AWS::StackName}-ProjectTag
+#   OwnerTag:
+#     Description: Default Owner Tag
+#     Value:
+#       Ref: OwnerTag
+#     Export:
+#       Name:
+#         Fn::Sub: ${AWS::StackName}-OwnerTag
+#   EnvironmentTag:
+#     Description: Default Environment Tag
+#     Value:
+#       Ref: EnvironmentTag
+#     Export:
+#       Name:
+#         Fn::Sub: ${AWS::StackName}-EnvironmentTag
