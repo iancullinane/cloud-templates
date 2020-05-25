@@ -44,6 +44,8 @@ Resources:
       DBInstanceClass: !FindInMap [InstanceSize, !Ref EnvironmentSize, DB] # Dynamic mapping + Pseudo Parameter
       DBName: !Ref DatabaseName
       Engine: MySQL
+      VPCSecurityGroups:
+        - sg-0ad922278c408cad0
       MasterUsername: !Ref DatabaseUser
       MasterUserPassword: !Ref DatabasePassword
   EC2:
