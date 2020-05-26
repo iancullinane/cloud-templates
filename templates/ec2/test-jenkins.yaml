@@ -72,24 +72,24 @@ Resources:
           packages:
             yum:
               - "java-1.8.0"
-        test:
-          files:
-            /etc/tmp/test.txt:
-              content: |
-                it worked
         configure_mgp_build_users:
-          # commands:
-          #   add_user:
-          #     command: "adduser jenkins --shell /bin/bash"
-          #     ignoreErrors: "false"
-          #   add_build_dir:
-          #     command: "mkdir /tmp/jenkins --shell /bin/bash"
-          #     ignoreErrors: "false"
-          #   build_dir_owner:
-          #     command: chown jenkins:jenkins /tmp/jenkins
-          #     ignoreErrors: "false"
+          groups:
+            jenkins: {}
+          users:
+            jenkins:
+              groups:
+                - "jenkins"
+                - "docker"
+              homeDir: "/tmp/jenkins"
+          commands:
+            add_build_dir:
+              command: "mkdir /tmp/jenkins --shell /bin/bash"
+              ignoreErrors: "false"
+            build_dir_owner:
+              command: chown jenkins:jenkins /tmp/jenkins
+              ignoreErrors: "false"
           files:
-            "/home/ec2-user/.ssh/authorized_keys":
+            "/tmp/jenkins/.ssh/authorized_keys":
               mode: 000400
               owner: jenkins
               group: jenkins
