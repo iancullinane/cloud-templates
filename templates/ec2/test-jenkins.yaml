@@ -73,7 +73,7 @@ Resources:
               - "java-1.8.0"
         configure_mgp_build_users:
           groups:
-            jenkins: {}
+            build: {}
             docker: {}
           users:
             jenkins:
