@@ -60,9 +60,8 @@ Resources:
       AWS::CloudFormation::Init:
         configSets:
           builder:
-            - "test"
-            - "configure_mgp_build_users"
             - "configure_cfn"
+            - "configure_mgp_build_users"
             - "install_jre"
         install_jre:
           commands:
