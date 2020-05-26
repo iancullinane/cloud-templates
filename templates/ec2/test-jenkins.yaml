@@ -50,6 +50,7 @@ Resources:
           #!/bin/bash
           yum update -y aws-cfn-bootstrap # good practice - always do this.
           /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource EC2Instance --configsets builder --region ${AWS::Region}
+          yum -y remove java 
           yum -y update
       Tags:
         - Key: Name
@@ -70,7 +71,8 @@ Resources:
               ignoreErrors: "false"
           packages:
             yum:
-              - "java-1.8.0"
+              java:
+                - 1.8
         configure_mgp_build_users:
           groups:
             build: {}
