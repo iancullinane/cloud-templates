@@ -36,7 +36,11 @@ Resources:
     Properties:
       InstanceType: !Ref InstanceType
       ImageId: !Ref AMIID
+<<<<<<< HEAD
       KeyName: cert-key-e2
+=======
+      KeyName: mgp-build-jenkins-agent
+>>>>>>> 0a1aed010b01441d9fccecd39d7e6aa811a316c5
       NetworkInterfaces:
         - AssociatePublicIpAddress: true
           DeviceIndex: "0"
