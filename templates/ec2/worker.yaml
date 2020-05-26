@@ -43,12 +43,11 @@ Resources:
         - Key: Name
           Value: !Sub "${AWS::StackName}-worker"
       UserData:
-        "Fn::Base64": |
-          #!/bin/bash 
-          # Ensure AWS CFN Bootstrap is the latest
+        "Fn::Base64": !Sub |
+          #!/bin/bash
           yum update -y aws-cfn-bootstrap # good practice - always do this.
-          /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource EC2Instance --configsets builder --region ${AWS::Region}
-          sudo yum update -y
+          /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource EC2 --configsets wordpress --region ${AWS::Region}
+          yum -y update
 
     Metadata:
       AWS::CloudFormation::Init:
