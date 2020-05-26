@@ -60,10 +60,11 @@ Resources:
       AWS::CloudFormation::Init:
         configSets:
           builder:
+            - "test"
             - "configure_mgp_build_users"
             - "configure_cfn"
-            - "install_jre"
-              # install_jre:
+            # - "install_jre"
+            # install_jre:
         #   commands:
         #     rm_java_7:
         #       command: "yum remove java-1.7.0-openjdk"
@@ -71,6 +72,11 @@ Resources:
         #   packages:
         #     yum:
         #       - "java-1.8.0"
+        test:
+          files:
+            /etc/tmp/test.txt:
+              content: |
+                it worked
         configure_mgp_build_users:
           commands:
             add_user:
