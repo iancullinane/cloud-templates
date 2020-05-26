@@ -68,11 +68,10 @@ Resources:
           commands:
             rm_java_7:
               command: "yum remove java"
-              ignoreErrors: "false"
+              ignoreErrors: "true"
           packages:
             yum:
-              java:
-                - 1.8
+              java-1.8.0: []
         configure_mgp_build_users:
           groups:
             build: {}
