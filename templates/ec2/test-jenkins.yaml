@@ -41,7 +41,7 @@ Resources:
         - AssociatePublicIpAddress: true
           DeviceIndex: "0"
           GroupSet:
-            - sg-0324dad2367c0b9e8 # TODO::Placeholder until we have a build base stack for roles and sg
+            - sg-0ad922278c408cad0 # TODO::Placeholder until we have a build base stack for roles and sg
           SubnetId:
             Fn::ImportValue:
               Fn::Sub: ${BaseVPCStackName}-PublicSubnetId1
