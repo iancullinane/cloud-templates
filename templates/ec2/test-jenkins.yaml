@@ -74,6 +74,7 @@ Resources:
         configure_mgp_build_users:
           groups:
             jenkins: {}
+            docker: {}
           users:
             jenkins:
               groups:
