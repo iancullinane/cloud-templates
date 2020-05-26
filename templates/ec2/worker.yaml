@@ -53,8 +53,14 @@ Resources:
       AWS::CloudFormation::Init:
         configSets:
           builder:
+            - "test"
             - "configure_cfn"
             - "install_resources"
+        test:
+          files:
+            /etc/tmp/test.txt:
+              content: |
+                it worked
         configure_cfn:
           files:
             /etc/cfn/hooks.d/cfn-auto-reloader.conf:
