@@ -78,22 +78,9 @@ Resources:
           users:
             jenkins:
               groups:
-                - "jenkins"
+                - "build"
                 - "docker"
               homeDir: "/tmp/jenkins"
-          commands:
-            add_build_dir:
-              command: "mkdir /tmp/jenkins --shell /bin/bash"
-              ignoreErrors: "false"
-            build_dir_owner:
-              command: chown jenkins:jenkins /tmp/jenkins
-              ignoreErrors: "false"
-          files:
-            "/tmp/jenkins/.ssh/authorized_keys":
-              mode: 000400
-              owner: jenkins
-              group: jenkins
-              content: !Ref JenkinsPublicKey
         configure_cfn:
           files:
             /etc/cfn/hooks.d/cfn-auto-reloader.conf:
