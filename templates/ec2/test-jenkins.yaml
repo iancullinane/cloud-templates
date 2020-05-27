@@ -36,15 +36,14 @@ Resources:
     Properties:
       InstanceType: !Ref InstanceType
       ImageId: !Ref AMIID
-      KeyName: cert-key-e2
-      NetworkInterfaces:
-        - AssociatePublicIpAddress: true
-          DeviceIndex: "0"
-          GroupSet:
-            - sg-0ad922278c408cad0 # TODO::Placeholder until we have a build base stack for roles and sg
-          SubnetId:
-            Fn::ImportValue:
-              Fn::Sub: ${BaseVPCStackName}-PublicSubnetId1
+      # NetworkInterfaces:
+      #   - AssociatePublicIpAddress: true
+      #     DeviceIndex: "0"
+      #     GroupSet:
+      #       - sg-0ad922278c408cad0 # TODO::Placeholder until we have a build base stack for roles and sg
+      #     SubnetId:
+      #       Fn::ImportValue:
+      #         Fn::Sub: ${BaseVPCStackName}-PublicSubnetId1
       UserData:
         "Fn::Base64": !Sub |
           #!/bin/bash
