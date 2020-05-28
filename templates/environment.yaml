@@ -15,18 +15,6 @@ Parameters:
     AllowedValues: ["Yes", "No"]
     Default: "No"
 
-  ProductTag:
-    Description: The product tag
-    Type: String
-
-  OwnerTag:
-    Description: The owner tag
-    Type: String
-
-  EnvironmentTag:
-    Description: The environment tag
-    Type: String
-
 # VPC and corresponding resources, this will cost money because of the NAT
 # gateways, this can be mitigated by removing the NAT gateway and whitelisting
 # IP addresses in the security group
@@ -42,12 +30,8 @@ Resources:
       EnableDnsSupport: !If [EnableDNS, true, false]
       EnableDnsHostnames: !If [EnableDNS, true, false]
       Tags:
-        - Key: Product
-          Value: !Ref ProductTag
-        - Key: Owner
-          Value: !Ref OwnerTag
-        - Key: Environment
-          Value: !Ref EnvironmentTag
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-Vpc"
 
   IGW:
     Type: "AWS::EC2::InternetGateway"
@@ -72,12 +56,8 @@ Resources:
       TemplateURL: https://craft-cf-bucket.s3.us-east-2.amazonaws.com/templates/vpc/subnet.yaml
       TimeoutInMinutes: 10 # not required
       Tags:
-        - Key: Product
-          Value: !Ref ProductTag
-        - Key: Owner
-          Value: !Ref OwnerTag
-        - Key: Environment
-          Value: !Ref EnvironmentTag
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-PublicSubnetStack"
 
   PrivateSubnet:
     Type: AWS::CloudFormation::Stack
@@ -90,13 +70,8 @@ Resources:
       TemplateURL: https://craft-cf-bucket.s3.us-east-2.amazonaws.com/templates/vpc/subnet.yaml
       TimeoutInMinutes: 10 # not required
       Tags:
-        - Key: Product
-          Value: !Ref ProductTag
-        - Key: Owner
-          Value: !Ref OwnerTag
-        - Key: Environment
-          Value: !Ref EnvironmentTag
-
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-PrivateSubnetStack"
 Outputs:
   VpcId:
     Description: ID of Shared Infrastructure VPC
