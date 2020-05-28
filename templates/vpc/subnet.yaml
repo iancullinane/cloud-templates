@@ -29,6 +29,11 @@ Parameters:
     Default: "2"
     Description: How many Availability Zones do you wish to utilize?
 
+  CFBucketName:
+    Description: The name of the cloudformation bucket for the account
+    Type: String
+    Default: craft-cf-bucket
+
 Conditions:
   IsPublic: !Equals [!Ref IsPublic, "Yes"]
   # IsPrivate: !Equals [!Ref IsPublic, "No"]
@@ -97,7 +102,7 @@ Resources:
       Parameters:
         SubnetID: !Ref Subnet1
         RtbID: !Ref RouteTable
-      TemplateURL: https://craft-cf-bucket.s3.us-east-2.amazonaws.com/templates/vpc/table.yaml
+      TemplateURL: !Sub https://${CFBucketName}.s3.us-east-2.amazonaws.com/templates/vpc/table.yaml
       TimeoutInMinutes: 10 # not required
 
   RouteAssoc1Private:
@@ -108,7 +113,7 @@ Resources:
         SubnetID: !Ref Subnet1
         RtbID: !Ref RouteTable
         GatewayID: !Ref GatewayID
-      TemplateURL: https://craft-cf-bucket.s3.us-east-2.amazonaws.com/templates/vpc/nat.yaml
+      TemplateURL: !Sub https://${CFBucketName}.s3.us-east-2.amazonaws.com/templates/vpc/nat.yaml
       TimeoutInMinutes: 10 # not required
 
   # subnets
@@ -137,7 +142,7 @@ Resources:
       Parameters:
         SubnetID: !Ref Subnet2
         RtbID: !Ref RouteTable
-      TemplateURL: https://craft-cf-bucket.s3.us-east-2.amazonaws.com/templates/vpc/table.yaml
+      TemplateURL: !Sub https://${CFBucketName}.s3.us-east-2.amazonaws.com/templates/vpc/table.yaml
       TimeoutInMinutes: 10 # not required
 
   RouteAssoc2Private:
@@ -148,7 +153,7 @@ Resources:
         SubnetID: !Ref Subnet1
         RtbID: !Ref RouteTable
         GatewayID: !Ref GatewayID
-      TemplateURL: https://craft-cf-bucket.s3.us-east-2.amazonaws.com/templates/vpc/nat.yaml
+      TemplateURL: !Sub https://${CFBucketName}.s3.us-east-2.amazonaws.com/templates/vpc/nat.yaml
       TimeoutInMinutes: 10 # not required
 
   # subnets
@@ -177,7 +182,7 @@ Resources:
       Parameters:
         SubnetID: !Ref Subnet3
         RtbID: !Ref RouteTable
-      TemplateURL: https://craft-cf-bucket.s3.us-east-2.amazonaws.com/templates/vpc/table.yaml
+      TemplateURL: !Sub https://${CFBucketName}.s3.us-east-2.amazonaws.com/templates/vpc/table.yaml
       TimeoutInMinutes: 10 # not required
 
   RouteAssoc3Private:
@@ -188,7 +193,7 @@ Resources:
         SubnetID: !Ref Subnet3
         RtbID: !Ref RouteTable
         GatewayID: !Ref GatewayID
-      TemplateURL: https://craft-cf-bucket.s3.us-east-2.amazonaws.com/templates/vpc/nat.yaml
+      TemplateURL: !Sub https://${CFBucketName}.s3.us-east-2.amazonaws.com/templates/vpc/nat.yaml
       TimeoutInMinutes: 10 # not required
 
 Outputs:
