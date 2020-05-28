@@ -36,27 +36,10 @@ Parameters:
 
 Conditions:
   IsPublic: !Equals [!Ref IsPublic, "Yes"]
-  # IsPrivate: !Equals [!Ref IsPublic, "No"]
-  Build2: !Or
-    - !Not [!Equals [!Ref NumberOfAZs, "1"]]
-    - !And
-      - !Not [!Equals [!Ref NumberOfAZs, "1"]]
-      - !Equals [!Ref IsPublic, "No"]
-  Build3: !Or
-    - !Equals [!Ref NumberOfAZs, "3"]
-    - !And
-      - !Equals [!Ref NumberOfAZs, "3"]
-      - !Equals [!Ref IsPublic, "No"]
-  BuildPrivate1: !Equals [!Ref IsPublic, "No"]
-  BuildPrivate2: !And
-    - !Not [!Equals [!Ref NumberOfAZs, "1"]]
-    - !Equals [!Ref IsPublic, "No"]
-  BuildPrivate3: !And
-    - !Equals [!Ref NumberOfAZs, "3"]
-    - !Equals [!Ref IsPublic, "No"]
+  IsPrivate: !Equals [!Ref IsPublic, "No"]
 
 Resources:
-  # Deneding on the type of attachemnets makes it public or private
+  # Depending on the type of attachemnets makes it public or private
   RouteTable:
     Type: AWS::EC2::RouteTable
     Properties:
@@ -107,90 +90,10 @@ Resources:
 
   RouteAssoc1Private:
     Type: AWS::CloudFormation::Stack # required
-    Condition: BuildPrivate1
+    Condition: IsPrivate
     Properties:
       Parameters:
         SubnetID: !Ref Subnet1
-        RtbID: !Ref RouteTable
-        GatewayID: !Ref GatewayID
-      TemplateURL: !Sub https://${CFBucketName}.s3.us-east-2.amazonaws.com/templates/vpc/nat.yaml
-      TimeoutInMinutes: 10 # not required
-
-  # subnets
-  Subnet2:
-    Type: AWS::EC2::Subnet
-    Condition: Build2
-    Properties:
-      VpcId:
-        Ref: VpcID
-      AvailabilityZone: !Select [1, !GetAZs ]
-      CidrBlock: !Select [1, !Ref CIDRMap]
-      Tags:
-        - Key: Name
-          Value:
-            Fn::Sub: ${AWS::StackName}-subnet
-        - "Fn::If":
-            - IsPublic
-            - Key: network
-              Value: public
-            - !Ref AWS::NoValue
-
-  RouteAssoc2Public:
-    Type: AWS::CloudFormation::Stack # required
-    Condition: IsPublic
-    Properties:
-      Parameters:
-        SubnetID: !Ref Subnet2
-        RtbID: !Ref RouteTable
-      TemplateURL: !Sub https://${CFBucketName}.s3.us-east-2.amazonaws.com/templates/vpc/table.yaml
-      TimeoutInMinutes: 10 # not required
-
-  RouteAssoc2Private:
-    Type: AWS::CloudFormation::Stack # required
-    Condition: BuildPrivate2
-    Properties:
-      Parameters:
-        SubnetID: !Ref Subnet1
-        RtbID: !Ref RouteTable
-        GatewayID: !Ref GatewayID
-      TemplateURL: !Sub https://${CFBucketName}.s3.us-east-2.amazonaws.com/templates/vpc/nat.yaml
-      TimeoutInMinutes: 10 # not required
-
-  # subnets
-  Subnet3:
-    Type: AWS::EC2::Subnet
-    Condition: Build3
-    Properties:
-      VpcId:
-        Ref: VpcID
-      AvailabilityZone: !Select [2, !GetAZs ]
-      CidrBlock: !Select [2, !Ref CIDRMap]
-      Tags:
-        - Key: Name
-          Value:
-            Fn::Sub: ${AWS::StackName}-subnet
-        - "Fn::If":
-            - IsPublic
-            - Key: network
-              Value: public
-            - !Ref AWS::NoValue
-
-  RouteAssoc3Public:
-    Type: AWS::CloudFormation::Stack # required
-    Condition: IsPublic
-    Properties:
-      Parameters:
-        SubnetID: !Ref Subnet3
-        RtbID: !Ref RouteTable
-      TemplateURL: !Sub https://${CFBucketName}.s3.us-east-2.amazonaws.com/templates/vpc/table.yaml
-      TimeoutInMinutes: 10 # not required
-
-  RouteAssoc3Private:
-    Type: AWS::CloudFormation::Stack # required
-    Condition: BuildPrivate3
-    Properties:
-      Parameters:
-        SubnetID: !Ref Subnet3
         RtbID: !Ref RouteTable
         GatewayID: !Ref GatewayID
       TemplateURL: !Sub https://${CFBucketName}.s3.us-east-2.amazonaws.com/templates/vpc/nat.yaml
