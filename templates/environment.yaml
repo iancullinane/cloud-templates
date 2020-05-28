@@ -41,6 +41,23 @@ Resources:
   IGW:
     Type: "AWS::EC2::InternetGateway"
 
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: PublicRouteTable
+          Value: !Sub "${AWS::StackName}-public-rtb"
+        - Key: network
+          Value: public
+
+  PublicIGWRoute:
+    Type: "AWS::EC2::Route"
+    Properties:
+      GatewayId: !Ref IGW
+      DestinationCidrBlock: 0.0.0.0/0
+      RouteTableId: !Ref PublicRouteTable
+
   # An Internet Gateway let's in the cats, does not cost money like a
   # typical NAT gateway does
   GatewayAttach:
@@ -58,6 +75,7 @@ Resources:
         NumberOfAZs: "1"
         GatewayID: !Ref IGW
         CIDRMap: 10.20.0.0/24,10.20.4.0/24,10.20.8.0/24
+        PublicRouteTable: !Ref PublicRouteTable
       TemplateURL: !Sub https://${CFBucketName}.s3.us-east-2.amazonaws.com/templates/vpc/subnet.yaml
       TimeoutInMinutes: 10 # not required
       Tags:
@@ -72,6 +90,7 @@ Resources:
         GatewayID: !Ref IGW
         NumberOfAZs: "1"
         CIDRMap: 10.20.2.0/23,10.20.6.0/23,10.20.10.0/23
+        PublicRouteTable: !Ref PublicRouteTable
       TemplateURL: !Sub https://${CFBucketName}.s3.us-east-2.amazonaws.com/templates/vpc/subnet.yaml
       TimeoutInMinutes: 10 # not required
       Tags:

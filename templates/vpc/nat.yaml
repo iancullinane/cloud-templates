@@ -13,6 +13,10 @@ Parameters:
     Description: ID for the igw on the environment
     Type: String
 
+  GatewayRoute:
+    Description: ID of the 0.0.0.0/0 route
+    Type: String
+
 Resources:
   NatGatewayEip:
     Type: AWS::EC2::EIP

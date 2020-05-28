@@ -16,6 +16,10 @@ Parameters:
     Description: List of cidrs to pass in
     Type: CommaDelimitedList
 
+  PublicRouteTable:
+    Description: The route table containing the 0.0.0.0/0 route association
+    Type: String
+
   VpcID:
     Description: The VPC ID
     Type: String
@@ -40,25 +44,6 @@ Conditions:
 
 Resources:
   # Depending on the type of attachemnets makes it public or private
-  RouteTable:
-    Type: AWS::EC2::RouteTable
-    Properties:
-      VpcId: !Ref VpcID
-      Tags:
-        - Key: PublicRouteTable
-          Value: !Sub "${AWS::StackName}-public-rtb"
-        - "Fn::If":
-            - IsPublic
-            - Key: network
-              Value: public
-            - !Ref AWS::NoValue
-
-  IGWRoute:
-    Type: "AWS::EC2::Route"
-    Properties:
-      GatewayId: !Ref GatewayID
-      DestinationCidrBlock: 0.0.0.0/0
-      RouteTableId: !Ref RouteTable
 
   # subnets
   Subnet1:
@@ -84,7 +69,7 @@ Resources:
     Properties:
       Parameters:
         SubnetID: !Ref Subnet1
-        RtbID: !Ref RouteTable
+        RtbID: !Ref PublicRouteTable
       TemplateURL: !Sub https://${CFBucketName}.s3.us-east-2.amazonaws.com/templates/vpc/table.yaml
       TimeoutInMinutes: 10 # not required
 
@@ -94,7 +79,7 @@ Resources:
     Properties:
       Parameters:
         SubnetID: !Ref Subnet1
-        RtbID: !Ref RouteTable
+        RtbID: !Ref PublicRouteTable
         GatewayID: !Ref GatewayID
       TemplateURL: !Sub https://${CFBucketName}.s3.us-east-2.amazonaws.com/templates/vpc/nat.yaml
       TimeoutInMinutes: 10 # not required
