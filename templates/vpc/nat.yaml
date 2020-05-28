@@ -39,12 +39,13 @@ Resources:
     Properties:
       VpcId: !Ref VpcId
 
-  PrivateRoute:
+  NatRoute1:
     Type: AWS::EC2::Route
     Properties:
-      RouteTableId: !Ref RtbID
+      RouteTableId:
+        Ref: PrivateRouteTable
       DestinationCidrBlock: 0.0.0.0/0
-      GatewayId: !Ref GatewayID
+      NatGatewayId: !Ref NatGateway
 
   PrivateSubnet1RouteAssoc:
     Type: AWS::EC2::SubnetRouteTableAssociation
