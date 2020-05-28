@@ -78,6 +78,7 @@ Resources:
     Condition: IsPrivate
     Properties:
       Parameters:
+        VocId: !Ref VpcID
         SubnetID: !Ref Subnet1
         RtbID: !Ref PublicRouteTable
         GatewayID: !Ref GatewayID

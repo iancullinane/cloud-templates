@@ -1,6 +1,10 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Description: Builds a NAT and associated routes to support a private networking layer
 Parameters:
+  VpcId:
+    Description: The VPC for the route table
+    Type: String
+
   SubnetID:
     Type: String
     Description:
@@ -9,12 +13,9 @@ Parameters:
   RtbID:
     Description: The route table to attach to
     Type: String
+
   GatewayID:
     Description: ID for the igw on the environment
-    Type: String
-
-  GatewayRoute:
-    Description: ID of the 0.0.0.0/0 route
     Type: String
 
 Resources:
@@ -33,9 +34,22 @@ Resources:
       SubnetId:
         Ref: SubnetID
 
+  PrivateRouteTable:
+    Type: "AWS::EC2::RouteTable"
+    Properties:
+      VpcId: !Ref VpcId
+
   PrivateRoute:
     Type: AWS::EC2::Route
     Properties:
       RouteTableId: !Ref RtbID
       DestinationCidrBlock: 0.0.0.0/0
       GatewayId: !Ref GatewayID
+
+  PrivateSubnet1RouteAssoc:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId:
+        Ref: PrivateRouteTable
+      SubnetId:
+        Ref: SubnetID
