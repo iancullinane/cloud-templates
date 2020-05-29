@@ -33,11 +33,19 @@ Resources:
           - AllocationId
       SubnetId:
         Ref: SubnetID
+      Tags:
+        - Key: Name
+          Value:
+            Fn::Sub: ${AWS::StackName}-nat-gw
 
   PrivateRouteTable:
     Type: "AWS::EC2::RouteTable"
     Properties:
       VpcId: !Ref VpcId
+      Tags:
+        - Key: Name
+          Value:
+            Fn::Sub: ${AWS::StackName}-pvt-rtb
 
   NatRoute1:
     Type: AWS::EC2::Route
