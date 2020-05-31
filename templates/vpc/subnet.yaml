@@ -44,8 +44,6 @@ Conditions:
 
 Resources:
   # Depending on the type of attachemnets makes it public or private
-
-  # subnets
   Subnet1:
     Type: AWS::EC2::Subnet
     Properties:

@@ -16,17 +16,15 @@ Parameters:
     Default: "No"
 
   CFBucketName:
-    Description: The name of the cloudformation bucket for the account
-    Type: String
+    Type: "AWS::SSM::Parameter::Value<String>"
     Default: craft-cf-bucket
-
-# VPC and corresponding resources, this will cost money because of the NAT
-# gateways, this can be mitigated by removing the NAT gateway and whitelisting
-# IP addresses in the security group
 
 Conditions:
   EnableDNS: !Equals [!Ref EnableDNS, "Yes"]
 
+# VPC and corresponding resources, this will cost money because of the NAT
+# gateways, this can be mitigated by removing the NAT gateway and whitelisting
+# IP addresses in the security group
 Resources:
   VPC:
     Type: "AWS::EC2::VPC"

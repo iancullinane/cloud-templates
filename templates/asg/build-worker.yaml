@@ -1,0 +1,118 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Deploy the a generic asg
+Parameters:
+  AMIID:
+    Description: The AMI for this instance, default to Amazon Linux 2
+    Type: AWS::EC2::Image::Id
+    Default: ami-0cd3dfa4e37921605
+
+  BaseVPCStackName:
+    Type: "AWS::SSM::Parameter::Value<String>"
+    Default: base-vpc
+
+  # BaseVPCStackName:
+  #   Description: The name of the base VPC for network imports
+  #   Type: String
+  #   Default: mgp-dev-vpc-base
+
+  InstanceType:
+    Description: Worker instance type
+    Type: String
+    Default: t2.small
+    AllowedValues:
+      - t2.micro
+      - t2.small
+      - t2.medium
+      - m3.medium
+      - m3.large
+      - m3.xlarge
+      - m3.2xlarge
+    ConstraintDescription: must be a valid EC2 instance type.
+
+Resources:
+  ASG:
+    Type: "AWS::AutoScaling::AutoScalingGroup"
+    Properties:
+      AutoScalingGroupName: !Sub "${AWS::StackName}-asg"
+      AvailabilityZones: !Select [0, !GetAZs ]
+      VPCZoneIdentifier:
+        - Fn::ImportValue:
+            Fn::Sub: ${BaseVPCStackName}-PublicSubnetId1
+      HealthCheckGracePeriod: 2
+      HealthCheckType: EC2 #TODO::Use elb
+      LaunchConfigurationName: !Ref LaunchConfig
+      MaxSize: "10" #required
+      MinSize: "0" #required
+
+  LaunchConfig:
+    Type: AWS::AutoScaling::LaunchConfiguration
+    Properties:
+      SecurityGroups:
+        - Ref: WorkerSG
+      InstanceType:
+        Ref: InstanceType
+      IamInstanceProfile:
+        Ref: WorkerRoleProfile
+      AssociatePublicIpAddress: false
+      ImageId:
+        Ref: AMIID
+      UserData:
+        "Fn::Base64": !Sub |
+          #!/bin/bash
+          yum update -y aws-cfn-bootstrap # good practice - always do this.
+          /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource MGPWorkerLaunchConfig --configsets builder --region ${AWS::Region}
+          yum -y update
+
+  WorkerRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ec2.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Path: /
+      Policies:
+        - PolicyName: Worker_Role_Policy
+          PolicyDocument:
+            Statement:
+              - Sid: EC2BasedOnTags
+                Effect: Allow
+                Action:
+                  - ec2:*
+                Resource: "*"
+              - Sid: AllowSSM
+                Effect: Allow
+                Action:
+                  - "ssmmessages:CreateControlChannel"
+                  - "ssmmessages:CreateDataChannel"
+                  - "ssmmessages:OpenControlChannel"
+                  - "ssmmessages:OpenDataChannel"
+                Resource: "*"
+
+  WorkerRoleProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Path: /
+      Roles:
+        - Ref: WorkerRole
+
+  WorkerSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Rules for allowing SSH access to bastion from Turbine
+      VpcId:
+        Fn::ImportValue:
+          Fn::Sub: ${BaseVPCStackName}-VpcId
+      SecurityGroupIngress: []
+      SecurityGroupEgress: []
+
+Outputs:
+  AsgId:
+    Description: ID of the worker asg
+    Value: !Ref ASG
+    Export:
+      Name: !Sub "${AWS::StackName}-AsgId"
