@@ -34,7 +34,8 @@ Resources:
     Type: "AWS::AutoScaling::AutoScalingGroup"
     Properties:
       AutoScalingGroupName: !Sub "${AWS::StackName}-asg"
-      AvailabilityZones: !Select [0, !GetAZs ]
+      AvailabilityZones:
+        - !Select [0, !GetAZs ]
       VPCZoneIdentifier:
         - Fn::ImportValue:
             Fn::Sub: ${BaseVPCStackName}-PublicSubnetId1
