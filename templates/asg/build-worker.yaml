@@ -48,6 +48,7 @@ Resources:
   LaunchConfig:
     Type: AWS::AutoScaling::LaunchConfiguration
     Properties:
+      KeyName: cert-key-e2
       SecurityGroups:
         - Ref: WorkerSG
       InstanceType:
