@@ -17,7 +17,7 @@ Parameters:
 
   CFBucketName:
     Type: "AWS::SSM::Parameter::Value<String>"
-    Default: craft-cf-bucket
+    Default: cf-bucket-name
 
 Conditions:
   EnableDNS: !Equals [!Ref EnableDNS, "Yes"]
