@@ -1,0 +1,95 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Deploy the MGP-Build worker
+Parameters:
+  AMIID:
+    Description: The AMI for this instance
+    Type: AWS::EC2::Image::Id
+    Default: ami-0f7919c33c90f5b58
+
+  BaseVPCStackName:
+    Type: "AWS::SSM::Parameter::Value<String>"
+    Default: base-vpc
+
+  InstanceType:
+    Description: WebServer EC2 instance type
+    Type: String
+    Default: t2.nano
+    AllowedValues:
+      - t2.nano
+      - t2.micro
+      - t2.small
+      - t2.medium
+      - m3.medium
+      - m3.large
+      - m3.xlarge
+      - m3.2xlarge
+    ConstraintDescription: must be a valid EC2 instance type.
+
+Resources:
+  EC2Instance:
+    Type: "AWS::EC2::Instance"
+    Properties:
+      InstanceType: !Ref InstanceType
+      ImageId: !Ref AMIID
+      KeyName: cert-key-e2
+      SourceDestCheck: false
+      NetworkInterfaces:
+        - AssociatePublicIpAddress: true
+          DeviceIndex: "0"
+          GroupSet:
+            - !Ref NatSG
+          SubnetId: !ImportValue
+            Fn::Sub: "${BaseVPCStackName}-PublicSubnetId1"
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-nat-instance"
+      UserData:
+        "Fn::Base64": |
+          #!/bin/bash
+          sysctl -w net.ipv4.ip_forward=1
+          /sbin/iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
+
+  NatSG:
+    Type: "AWS::EC2::SecurityGroup"
+    Properties:
+      VpcId:
+        Fn::ImportValue:
+          Fn::Sub: ${BaseVPCStackName}-VpcId
+      GroupDescription: Enable SSH access via port 22
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 96.230.41.165/0
+      SecurityGroupEgress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: Name
+          Value:
+            Fn::Sub: ${AWS::StackName}-sg
+
+Outputs:
+  InstanceId:
+    Description: InstanceId of the newly created EC2 instance
+    Value: !Ref EC2Instance
+
+  AZ:
+    Description: Availability Zone of the newly created EC2 instance
+    Value: !GetAtt
+      - EC2Instance
+      - AvailabilityZone
