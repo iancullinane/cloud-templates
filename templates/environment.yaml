@@ -10,7 +10,7 @@ Parameters:
     Default: 10.20.0.0/16
 
   EnableDNS:
-    Description: Whether or not to support public DNS
+    Description: Whether or not to provide DNS for instances
     Type: String
     AllowedValues: ["Yes", "No"]
     Default: "No"

@@ -10,10 +10,11 @@ Parameters:
     Type: "AWS::SSM::Parameter::Value<String>"
     Default: base-vpc
 
-  # BaseVPCStackName:
-  #   Description: The name of the base VPC for network imports
-  #   Type: String
-  #   Default: mgp-dev-vpc-base
+  EnablePublicIP:
+    Description: The name of the base VPC for network imports
+    Type: String
+    AllowedValues: ["Yes", "No"]
+    Default: "No"
 
   InstanceType:
     Description: Worker instance type
@@ -28,6 +29,9 @@ Parameters:
       - m3.xlarge
       - m3.2xlarge
     ConstraintDescription: must be a valid EC2 instance type.
+
+Conditions:
+  EnablePublicIp: !Equals [!Ref EnablePublicIP, "Yes"]
 
 Resources:
   ASG:
@@ -48,6 +52,7 @@ Resources:
   LaunchConfig:
     Type: AWS::AutoScaling::LaunchConfiguration
     Properties:
+      AssociatePublicIpAddress: !If [EnablePublicIp, true, false]
       KeyName: cert-key-e2
       SecurityGroups:
         - Ref: WorkerSG
@@ -55,7 +60,6 @@ Resources:
         Ref: InstanceType
       IamInstanceProfile:
         Ref: WorkerRoleProfile
-      AssociatePublicIpAddress: false
       ImageId:
         Ref: AMIID
       UserData:
