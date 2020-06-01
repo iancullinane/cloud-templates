@@ -39,6 +39,18 @@ Resources:
   IGW:
     Type: "AWS::EC2::InternetGateway"
 
+  NatInstance:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      Parameters:
+        BaseVPCStackName: !Sub "${AWS::StackName}-Vpc"
+        PublicRouteTable: !Ref PublicRouteTable
+      TemplateURL: !Sub https://${CFBucketName}.s3.us-east-2.amazonaws.com/templates/nat/manual-nat.yaml
+      TimeoutInMinutes: 10 # not required
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-PublicSubnetStack"
+
   PublicRouteTable:
     Type: AWS::EC2::RouteTable
     Properties:
@@ -89,6 +101,7 @@ Resources:
         NumberOfAZs: "1"
         CIDRMap: 10.20.2.0/23,10.20.6.0/23,10.20.10.0/23
         PublicRouteTable: !Ref PublicRouteTable
+        NatInstanceID: !Ref NatInstance
       TemplateURL: !Sub https://${CFBucketName}.s3.us-east-2.amazonaws.com/templates/vpc/subnet.yaml
       TimeoutInMinutes: 10 # not required
       Tags:

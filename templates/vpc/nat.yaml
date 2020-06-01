@@ -10,6 +10,11 @@ Parameters:
     Description:
       SubnetId of an existing Public facing subnet in your Virtual Private
       Cloud (VPC)
+
+  NatInstanceId:
+    Type: String
+    Description: ID of the NAT instance
+
   RtbID:
     Description: The route table to attach to
     Type: String
@@ -24,19 +29,19 @@ Resources:
     Properties:
       Domain: vpc
 
-  NatGateway:
-    Type: AWS::EC2::NatGateway
-    Properties:
-      AllocationId:
-        Fn::GetAtt:
-          - NatGatewayEip
-          - AllocationId
-      SubnetId:
-        Ref: SubnetID
-      Tags:
-        - Key: Name
-          Value:
-            Fn::Sub: ${AWS::StackName}-nat-gw
+  # NatGateway:
+  #   Type: AWS::EC2::NatGateway
+  #   Properties:
+  #     AllocationId:
+  #       Fn::GetAtt:
+  #         - NatGatewayEip
+  #         - AllocationId
+  #     SubnetId:
+  #       Ref: SubnetID
+  #     Tags:
+  #       - Key: Name
+  #         Value:
+  #           Fn::Sub: ${AWS::StackName}-nat-gw
 
   PrivateRouteTable:
     Type: "AWS::EC2::RouteTable"
@@ -53,7 +58,7 @@ Resources:
       RouteTableId:
         Ref: PrivateRouteTable
       DestinationCidrBlock: 0.0.0.0/0
-      NatGatewayId: !Ref NatGateway
+      InstanceId: !Ref NatInstanceId
 
   PrivateSubnet1RouteAssoc:
     Type: AWS::EC2::SubnetRouteTableAssociation
