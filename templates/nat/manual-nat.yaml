@@ -1,0 +1,90 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Deploy the MGP-Build worker
+Parameters:
+  AMIID:
+    Description: The AMI for this instance
+    Type: AWS::EC2::Image::Id
+    Default: ami-0ac473106208107b7
+
+  BaseVPCStackName:
+    Description: The name of the base VPC
+    Type: String
+
+  InstanceType:
+    Description: WebServer EC2 instance type
+    Type: String
+    Default: t2.nano
+    AllowedValues:
+      - t2.nano
+      - t2.micro
+      - t2.small
+      - t2.medium
+      - m3.medium
+      - m3.large
+      - m3.xlarge
+      - m3.2xlarge
+    ConstraintDescription: must be a valid EC2 instance type.
+
+Resources:
+  EC2Instance:
+    Type: "AWS::EC2::Instance"
+    Properties:
+      InstanceType: !Ref InstanceType
+      ImageId: !Ref AMIID
+      KeyName: cert-key-e2
+      SourceDestCheck: false
+      NetworkInterfaces:
+        - AssociatePublicIpAddress: true
+          DeviceIndex: "0"
+          GroupSet:
+            - !Ref NatSG
+          SubnetId: !ImportValue
+            Fn::Sub: "${BaseVPCStackName}-PublicSubnetId1"
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-nat-instance"
+
+  NatSG:
+    Type: "AWS::EC2::SecurityGroup"
+    Properties:
+      VpcId:
+        Fn::ImportValue:
+          Fn::Sub: ${BaseVPCStackName}-VpcId
+      GroupDescription: Enable SSH access via port 22
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 96.230.41.165/0
+      SecurityGroupEgress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: Name
+          Value:
+            Fn::Sub: ${AWS::StackName}-sg
+
+Outputs:
+  InstanceId:
+    Description: InstanceId of the newly created EC2 instance
+    Value: !Ref EC2Instance
+
+  AZ:
+    Description: Availability Zone of the newly created EC2 instance
+    Value: !GetAtt
+      - EC2Instance
+      - AvailabilityZone
