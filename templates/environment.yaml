@@ -39,6 +39,16 @@ Resources:
   IGW:
     Type: "AWS::EC2::InternetGateway"
 
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-public-rtb"
+        - Key: network
+          Value: public
+
   NatInstance:
     Type: AWS::CloudFormation::Stack
     Properties:
@@ -50,16 +60,6 @@ Resources:
       Tags:
         - Key: Name
           Value: !Sub "${AWS::StackName}-PublicSubnetStack"
-
-  PublicRouteTable:
-    Type: AWS::EC2::RouteTable
-    Properties:
-      VpcId: !Ref VPC
-      Tags:
-        - Key: PublicRouteTable
-          Value: !Sub "${AWS::StackName}-public-rtb"
-        - Key: network
-          Value: public
 
   PublicIGWRoute:
     Type: "AWS::EC2::Route"
