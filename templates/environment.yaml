@@ -7,13 +7,11 @@ Parameters:
     MaxLength: 18
     AllowedPattern: "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{1,2})"
     ConstraintDescription: Must be a valid CIDR range in the form x.x.x.x/16
-    Default: 10.20.0.0/16
 
   EnableDNS:
     Description: Whether or not to provide DNS for instances
     Type: String
     AllowedValues: ["Yes", "No"]
-    Default: "No"
 
   CFBucketName:
     Type: "AWS::SSM::Parameter::Value<String>"
@@ -39,6 +37,34 @@ Resources:
   IGW:
     Type: "AWS::EC2::InternetGateway"
 
+  LogicalID:
+    Type: "AWS::EC2::Instance"
+    Properties:
+      ImageId: ami-00d1f8201864cc10c
+      InstanceType: t2.micro
+      NetworkInterfaces:
+        - GroupSet:
+            - !Ref "NATSecurityGroup"
+          AssociatePublicIpAddress: true
+          DeviceIndex: "0"
+          DeleteOnTermination: true
+          SubnetId: !Ref "PublicSubnetAZ1"
+      # SecurityGroupIds:
+      # - String
+  # SubnetId: String
+
+  # NatInstance:
+  #   Type: AWS::CloudFormation::Stack
+  #   Properties:
+  #     Parameters:
+  #       BaseVPCStackName: !Sub "${AWS::StackName}-Vpc"
+  #       PublicRouteTable: !Ref PublicRouteTable
+  #     TemplateURL: !Sub https://${CFBucketName}.s3.us-east-2.amazonaws.com/templates/nat/manual-nat.yaml
+  #     TimeoutInMinutes: 10 # not required
+  #     Tags:
+  #       - Key: Name
+  #         Value: !Sub "${AWS::StackName}-PublicSubnetStack"
+
   PublicRouteTable:
     Type: AWS::EC2::RouteTable
     Properties:
@@ -48,18 +74,6 @@ Resources:
           Value: !Sub "${AWS::StackName}-public-rtb"
         - Key: network
           Value: public
-
-  NatInstance:
-    Type: AWS::CloudFormation::Stack
-    Properties:
-      Parameters:
-        BaseVPCStackName: !Sub "${AWS::StackName}-Vpc"
-        PublicRouteTable: !Ref PublicRouteTable
-      TemplateURL: !Sub https://${CFBucketName}.s3.us-east-2.amazonaws.com/templates/nat/manual-nat.yaml
-      TimeoutInMinutes: 10 # not required
-      Tags:
-        - Key: Name
-          Value: !Sub "${AWS::StackName}-PublicSubnetStack"
 
   PublicIGWRoute:
     Type: "AWS::EC2::Route"
@@ -101,7 +115,7 @@ Resources:
         NumberOfAZs: "1"
         CIDRMap: 10.20.2.0/23,10.20.6.0/23,10.20.10.0/23
         PublicRouteTable: !Ref PublicRouteTable
-        NatInstanceID: !Ref NatInstance
+        # NatInstanceID: !Ref NatInstance
       TemplateURL: !Sub https://${CFBucketName}.s3.us-east-2.amazonaws.com/templates/vpc/subnet.yaml
       TimeoutInMinutes: 10 # not required
       Tags:
