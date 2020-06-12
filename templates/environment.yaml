@@ -35,20 +35,8 @@ Resources:
           Value: !Sub "${AWS::StackName}-Vpc"
 
   IGW:
-    Type: "AWS::EC2::InternetGateway"
-
-  LogicalID:
-    Type: "AWS::EC2::Instance"
-    Properties:
-      ImageId: ami-00d1f8201864cc10c
-      InstanceType: t2.micro
-      NetworkInterfaces:
-        - GroupSet:
-            - !Ref "NATSecurityGroup"
-          AssociatePublicIpAddress: true
-          DeviceIndex: "0"
-          DeleteOnTermination: true
-          SubnetId: !Ref "PublicSubnetAZ1"
+    Type:
+      "AWS::EC2::InternetGateway"
       # SecurityGroupIds:
       # - String
   # SubnetId: String
