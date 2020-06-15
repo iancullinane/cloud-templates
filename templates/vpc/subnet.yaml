@@ -24,11 +24,6 @@ Parameters:
     Description: The VPC ID
     Type: String
 
-  NatInstanceID:
-    Description: The NAT Instance ID for a private route table
-    Type: String
-    Default: ""
-
   NumberOfAZs:
     Type: String
     AllowedValues:
@@ -85,7 +80,6 @@ Resources:
         SubnetID: !Ref Subnet1
         RtbID: !Ref PublicRouteTable
         GatewayID: !Ref GatewayID
-        NatInstanceId: !Ref NatInstanceID
       TemplateURL: !Sub https://${CFBucketName}.s3.us-east-2.amazonaws.com/templates/vpc/nat.yaml
       TimeoutInMinutes: 10 # not required
 
