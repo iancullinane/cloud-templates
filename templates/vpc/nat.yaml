@@ -37,6 +37,9 @@ Resources:
           DeviceIndex: "0"
           DeleteOnTermination: true
           SubnetId: !Ref SubnetID
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-nat
 
   NatSG:
     Type: "AWS::EC2::SecurityGroup"
