@@ -109,9 +109,17 @@ Resources:
         Ref: PrivateRouteTable
       DestinationCidrBlock: 0.0.0.0/0
       InstanceId:
-        Fn::If: [UseNATInstance, !Ref NatInstance, !Ref AWS::NoValue]
+        Fn::If:
+          - UseNATInstance
+          - Ref: NatInstance
+          - Ref: AWS::NoValue
       GatewayId:
-        Fn::If: [UseNATGateway, !Ref NatGateway, !Ref AWS::NoValue]
+        Fn::If:
+          - UseNATGateway
+          - Ref: NatGateway
+          - Ref: AWS::NoValue
+      # InstanceId: !If [UseNATInstance, !Ref NatInstance, !Ref AWS::NoValue]
+      # GatewayId: !If [UseNATGateway, !Ref NatGateway, !Ref AWS::NoValue]
 
   PrivateSubnet1RouteAssoc:
     Type: AWS::EC2::SubnetRouteTableAssociation
