@@ -82,8 +82,7 @@ Resources:
       Parameters:
         VpcId: !Ref VpcID
         SubnetID: !Ref Subnet1
-        RtbID: !Ref PublicRouteTable
-        GatewayID: !Ref GatewayID
+        UseNATInstance: "Yes"
       TemplateURL: !Sub https://${CFBucketName}.s3.us-east-2.amazonaws.com/templates/vpc/nat.yaml
       TimeoutInMinutes: 10 # not required
 
