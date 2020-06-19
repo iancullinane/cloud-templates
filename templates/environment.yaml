@@ -35,23 +35,7 @@ Resources:
           Value: !Sub "${AWS::StackName}-Vpc"
 
   IGW:
-    Type:
-      "AWS::EC2::InternetGateway"
-      # SecurityGroupIds:
-      # - String
-  # SubnetId: String
-
-  # NatInstance:
-  #   Type: AWS::CloudFormation::Stack
-  #   Properties:
-  #     Parameters:
-  #       BaseVPCStackName: !Sub "${AWS::StackName}-Vpc"
-  #       PublicRouteTable: !Ref PublicRouteTable
-  #     TemplateURL: !Sub https://${CFBucketName}.s3.us-east-2.amazonaws.com/templates/nat/manual-nat.yaml
-  #     TimeoutInMinutes: 10 # not required
-  #     Tags:
-  #       - Key: Name
-  #         Value: !Sub "${AWS::StackName}-PublicSubnetStack"
+    Type: "AWS::EC2::InternetGateway"
 
   PublicRouteTable:
     Type: AWS::EC2::RouteTable

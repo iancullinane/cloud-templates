@@ -11,22 +11,43 @@ Parameters:
       SubnetId of an existing Public facing subnet in your Virtual Private
       Cloud (VPC)
 
-  RtbID:
-    Description: The route table to attach to
+  UseNATInstance:
+    Description: Whether or not to provide DNS for instances
     Type: String
+    AllowedValues: ["Yes", "No"]
+    Default: "No"
 
-  GatewayID:
-    Description: ID for the igw on the environment
-    Type: String
+  # RtbID:
+  #   Description: The route table to attach to
+  #   Type: String
+  # GatewayID:
+  #   Description: ID for the igw on the environment
+  #   Type: String
 
+Conditions:
+  UseNATInstance: !Equals [!Ref UseNATInstance, "Yes"]
+  UseNATGateway: !Equals [!Ref UseNATInstance, "No"]
 Resources:
   NatGatewayEip:
+    Condition: UseNATGateway
     Type: AWS::EC2::EIP
     Properties:
       Domain: vpc
 
+  NatGateway:
+    Condition: UseNATGateway
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId:
+        Fn::GetAtt:
+          - NatGatewayEip
+          - AllocationId
+      SubnetId:
+        Ref: SubnetID
+
   NatInstance:
     Type: "AWS::EC2::Instance"
+    Condition: UseNATInstance
     Properties:
       ImageId: ami-00d1f8201864cc10c
       InstanceType: t2.micro
@@ -39,17 +60,38 @@ Resources:
           SubnetId: !Ref SubnetID
       Tags:
         - Key: Name
-          Value: !Sub ${AWS::StackName}-nat
+          Value: subnet-nat
 
   NatSG:
     Type: "AWS::EC2::SecurityGroup"
     Properties:
       GroupDescription: NatInstanceSG #required
-      # SecurityGroupEgress:
-      #   - Egress
-      # SecurityGroupIngress:
-      #   - Ingress
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 96.230.41.165/0
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 96.230.41.165/0
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 96.230.41.165/0
+      SecurityGroupEgress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
       VpcId: !Ref VpcId
+      Tags:
+        - Key: Name
+          Value: nat-security-group
 
   PrivateRouteTable:
     Type: "AWS::EC2::RouteTable"
@@ -66,7 +108,10 @@ Resources:
       RouteTableId:
         Ref: PrivateRouteTable
       DestinationCidrBlock: 0.0.0.0/0
-      InstanceId: !Ref NatInstance
+      InstanceId:
+        Fn::If: [UseNATInstance, !Ref NatInstance, !Ref AWS::NoValue]
+      GatewayId:
+        Fn::If: [UseNATGateway, !Ref NatGateway, !Ref AWS::NoValue]
 
   PrivateSubnet1RouteAssoc:
     Type: AWS::EC2::SubnetRouteTableAssociation

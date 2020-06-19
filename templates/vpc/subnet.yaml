@@ -54,7 +54,11 @@ Resources:
       Tags:
         - Key: Name
           Value:
-            Fn::Sub: ${AWS::StackName}-subnet
+            Fn::Sub:
+              - ${scope}-subnet-1-${az}
+              - az: !Select [0, !GetAZs ]
+                scope:
+                  Fn::If: [IsPublic, "public", "private"]
         - "Fn::If":
             - IsPublic
             - Key: network
