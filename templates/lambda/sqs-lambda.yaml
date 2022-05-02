@@ -1,0 +1,199 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Creates a function that ingests a Cloudfront Origin-Response (event) and sends an SQS message
+Parameters:
+  SQSName: 
+    Description: Name of the SQS queue to send processed Cloudfront responses
+    Type: String
+  SQSRegion: 
+    Description: The region of the SQS Queue
+    Type: String
+    Default: us-east-2
+  TriggerStatusCode:
+    Description:  The HTTP status code to trigger sending the SQS message
+    Type: Number
+    Default: 404
+  VersionDescription:
+    Description: A description for the version to override the description in the function config. By default, a version is not created as it cannot be updated.
+    Type: String
+    Default: ""
+  OwnerTag:
+    Description: Value for the 'Owner' tag
+    Type: String
+    Default: ""
+  ProjectTag:
+    Description: Value for the 'Project' tag
+    Type: String
+    Default: ""
+  EnvironmentTag:
+    Description: Value for the 'Environment' tag
+    Type: String
+    Default: ""
+Conditions:
+  CreateVersion:
+    !Not [!Equals [!Ref VersionDescription, ""]]
+Resources:
+  SQSExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Tags:
+      - Key: Owner
+        Value:
+          Ref: OwnerTag
+      - Key: Project
+        Value:
+          Ref: ProjectTag
+      - Key: Environment
+        Value:
+          Ref: EnvironmentTag
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: 
+              - lambda.amazonaws.com
+              - edgelambda.amazonaws.com
+            Action: sts:AssumeRole
+      Path: /
+      ManagedPolicyArns:
+        - "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+        - "arn:aws:iam::aws:policy/CloudWatchLambdaInsightsExecutionRolePolicy"
+      Policies:
+        - PolicyName: sqs
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action: 
+                - sqs:GetQueueUrl
+                - sqs:SendMessage
+                Resource: 
+                - 'arn:aws:sqs:*'
+        - PolicyName: cloudfront
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action: 
+                - cloudfront:UpdateDistribution
+                - iam:CreateServiceLinkedRole
+                - lambda:GetFunction
+                - lambda:EnableReplication*
+                Resource: 
+                - 'arn:aws:lambda:*'
+  DistroSQSFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Tags:
+      - Key: Owner
+        Value:
+          Ref: OwnerTag
+      - Key: Project
+        Value:
+          Ref: ProjectTag
+      - Key: Environment
+        Value:
+          Ref: EnvironmentTag
+      Code:
+        ZipFile:
+          Fn::Sub:
+            - |
+              import traceback
+              import json
+              import boto3
+              from botocore.exceptions import ClientError
+              from botocore.config import Config
+
+              def send_sqs(SQSName, msg):
+                   
+                  # Client must be for the region the queue is in
+                  cfg = Config(
+                      region_name = '${SQSRegionRef}'
+                  )
+                  
+                  # Send an SQS message
+                  sqs_client = boto3.client('sqs', config=cfg)
+                  sqs_url = sqs_client.get_queue_url(
+                      QueueName=SQSName
+                      )['QueueUrl']
+                  error = None
+                  try:
+                      response = sqs_client.send_message(QueueUrl=sqs_url,
+                                                    MessageBody=json.dumps(msg))
+                  except ClientError as e:
+                      traceback.print_exc()
+                      error = str(e)
+                  return response, error
+
+
+              def handler(event, context):
+                  QueueName = '${SQSNameRef}'
+                  TriggerStatusCode = '${TriggerStatusCodeRef}'
+                  # Cleanup and only send response status and request uri
+                  response = event['Records'][0]['cf']['response']
+                  request = event['Records'][0]['cf']['request']
+
+                  uri = request["uri"]
+                  status = response["status"]
+                  statusDescription = response["statusDescription"]
+                  
+                  sqs_msg = {
+                      "cf": {
+                          "request": {"uri": uri},
+                          "response": {
+                              "status": status,
+                              "statusDescription": statusDescription
+                          }
+                      }
+                  }
+                  print(f'SQS message: {sqs_msg}')
+
+                  # Send SQS message
+                  if status == TriggerStatusCode:
+                      sqs, error = send_sqs(QueueName, sqs_msg)
+                      if error is None:
+                          print(f'Sent SQS message ID: {sqs["MessageId"]}')
+                      else:
+                          print(f'Error: {error}')
+                  return response
+
+            - SQSNameRef:
+                Ref: SQSName
+              TriggerStatusCodeRef:
+                Ref: TriggerStatusCode
+              SQSRegionRef:
+                Ref: SQSRegion
+              
+      Handler: index.handler
+      Runtime: python3.7
+      Role: !GetAtt SQSExecutionRole.Arn
+  FunctionPermissions:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:GetFunction
+      FunctionName: !GetAtt DistroSQSFunction.Arn
+      Principal: replicator.lambda.amazonaws.com
+  Version:
+    Type: AWS::Lambda::Version
+    Condition: CreateVersion
+    Properties:
+      FunctionName: !GetAtt DistroSQSFunction.Arn
+      Description: !Ref VersionDescription
+
+Outputs:
+  VersionARN:
+    Description: Version ARN of the SQS function for Edge applications
+    Condition: CreateVersion
+    Value:
+      Ref: Version
+    Export:
+      Name:
+        Fn::Sub: ${AWS::StackName}-VersionARN
+  FunctionARN: 
+    Description: ARN of the SQS function for Edge applications
+    Value:
+      Fn::GetAtt: DistroSQSFunction.Arn
+    Export:
+      Name:
+        Fn::Sub: ${AWS::StackName}-FunctionARN
+    
