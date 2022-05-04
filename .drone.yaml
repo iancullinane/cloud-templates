@@ -14,3 +14,17 @@ steps:
         from_secret: AWS-Secret
       source: templates/**/*
       target: /
+
+  - name: upload
+    image: plugins/s3
+    settings:
+      bucket: sheeta-cfn-bucket
+      region: us-east-2
+      access_key:
+        from_secret: new_aws_key
+      secret_key:
+        from_secret: new_aws_secret
+      source: templates/**/*
+      target: /${DRONE_COMMIT_SHA}/
+
+
