@@ -10,6 +10,7 @@ Parameters:
   ASGWorkerProfile:
     Description: ID of the worker instance profile
     Type: String
+    Default: TestProfile
 
   AZ:
     Type: String
@@ -25,7 +26,7 @@ Resources:
         - !Ref AZ
       TerminationPolicies:
         - OldestInstance
-      MinSize: "0"
+      MinSize: "3"
       MaxSize: "100"
       Tags:
         - Key: Name
