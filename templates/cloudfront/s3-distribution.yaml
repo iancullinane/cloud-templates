@@ -1,0 +1,207 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Cloudfront distribution for S3 bucket
+Parameters:
+  OriginBucket:
+    Description: The DNS name of the Amazon Simple Storage Service (S3) bucket
+    Type: String
+  OriginAccessIdentity:
+    Description: The CloudFront origin access identity to associate with the origin.
+      This is used to configure the origin so that end users can access objects in
+      an Amazon S3 bucket through CloudFront only. This will override an OAI created via comment.
+    Type: String
+    Default: ""
+  OriginAccessIdentityComment:
+    Description: A comment to describe the CloudFront origin access identity to associate with the origin.
+      This is used to configure the origin so that end users can access objects in
+      an Amazon S3 bucket through CloudFront only. Always created with a comment. Created when NO OriginAccessIdentity is supplied.
+    Type: String
+    Default: ""
+  EnableDistribution:
+    Description: Controls whether the distribution is enabled to accept end user requests
+      for content.
+    Type: String
+    Default: "true"
+    AllowedValues:
+    - "true"
+    - "false"
+  Comment:
+    Description: Any comments that you want to include about the distribution.
+    Type: String
+  AcmCertificateArn:
+    Description: If you're using an alternate domain name, the Amazon Resource Name
+      (ARN) of an AWS Certificate Manager (ACM) certificate. Use the ACM service to
+      provision and manage your certificates. The cert must be uploaded in the us-east-1
+      region, regardless of where the cloudfront stack is created.
+    Type: String
+  DefaultTTL:
+    Description: The default time in seconds that objects stay in CloudFront caches
+      before CloudFront forwards another request to your custom origin to determine
+      whether the object has been updated. This value applies only when your custom
+      origin does not add HTTP headers, such as Cache-Control max-age, Cache-Control
+      s-maxage, and Expires to objects.
+    Type: Number
+  HostedZoneName:
+    Description: The name of the domain for the hosted zone where you want to add
+      the record set.
+    Type: String
+  HostedZonePrefix:
+    Description: Subdomain for this distribution. Will be added to HostedZoneName
+      and registered in Route53
+    Type: String
+  LogBucket:
+    Description: S3 Bucket for access logging. Logs will be written to s3://bucket/prefix/stack-name
+    Type: String
+  LogPrefix:
+    Description: Prefix for access logs. Always appends /${StackName} to any prefix.
+    Type: String
+    Default: ""
+  LambdaTrigger:
+    Description: Specifies the event type that triggers a Lambda function invocation. Defaults to no trigger. Requires lambda function.
+    Type: String
+    Default: ""
+    AllowedValues:
+    - ""
+    - "origin-request"
+    - "origin-response"
+    - "viewer-request"
+    - "viewer-response"
+  LambdaFunction:
+    Description: The ARN of the Lambda function.
+    Type: String
+    Default: ""
+  LambdaVersion:
+    Description: The version of the Lambda function. You must specify the function version; you can't specify a Lambda alias or $LATEST
+    Type: Number
+    Default: 1
+  VersionARNStack:
+    Description: A stack that outputs the version ARN of the Lambda function. Takes priority over LambdaFunction and LambdaVersion.
+    Type: String
+    Default: ""
+  ProjectTag:
+    Description: Value for the 'Project' tag
+    Type: String
+  OwnerTag:
+    Description: Value for the 'Owner' tag
+    Type: String
+  EnvironmentTag:
+    Description: Value for the 'Environment' tag
+    Type: String
+Conditions:
+  NoLogPrefix:
+    Fn::Equals:
+    - Ref: LogPrefix
+    - ""
+  CreateOAI:
+    !Or [!Equals [!Ref OriginAccessIdentity, ""], !Not [!Equals [!Ref OriginAccessIdentityComment, ""]]]
+  DefaultOAIComment:
+    !Equals [!Ref OriginAccessIdentityComment, ""]
+  UseProvidedOAI:
+    !Not [!Equals [!Ref OriginAccessIdentity, ""]]
+  AddLambdaTrigger:
+    !Not [!Equals [!Ref LambdaTrigger, ""]]
+  UseLambdaStack:
+    !Not [!Equals [!Ref VersionARNStack, ""]]
+
+Resources:
+  CloudFrontOAI:
+    Type: AWS::CloudFront::CloudFrontOriginAccessIdentity
+    Condition: CreateOAI
+    Properties: 
+      CloudFrontOriginAccessIdentityConfig: 
+        Comment: 
+          Fn::If:
+          - DefaultOAIComment
+          - "Default. Update me. No OAI comment provided, or OAI."
+          - !Ref OriginAccessIdentityComment
+  CloudFrontDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Origins:
+        - DomainName:
+            Fn::Sub: ${OriginBucket}.s3.amazonaws.com
+          Id:
+            Ref: AWS::StackName
+          S3OriginConfig:            
+            OriginAccessIdentity:
+              Fn::If:
+              - UseProvidedOAI
+              - !Ref OriginAccessIdentity
+              - Fn::Sub: 
+                - origin-access-identity/cloudfront/${CloudFrontOAIRef}
+                - CloudFrontOAIRef: !Ref CloudFrontOAI
+        HttpVersion: http2
+        Enabled:
+          Ref: EnableDistribution
+        Comment:
+          Ref: Comment
+        Aliases:
+        - Fn::Sub: ${HostedZonePrefix}.${HostedZoneName}
+        DefaultCacheBehavior:
+          AllowedMethods:
+          - GET
+          - HEAD
+          TargetOriginId:
+            Ref: AWS::StackName
+          ForwardedValues:
+            QueryString: true
+            Cookies:
+              Forward: none
+          ViewerProtocolPolicy: https-only
+          DefaultTTL:
+            Ref: DefaultTTL
+          LambdaFunctionAssociations:
+          - !If
+            - AddLambdaTrigger
+            - LambdaFunctionARN: 
+                !If
+                - UseLambdaStack
+                - Fn::ImportValue:
+                    Fn::Sub: ${VersionARNStack}-VersionARN
+                - Fn::Sub: 
+                  - ${LambdaFunctionRef}:${LambdaVersionRef}
+                  - LambdaFunctionRef: !Ref LambdaFunction
+                    LambdaVersionRef: !Ref LambdaVersion
+              EventType: !Ref LambdaTrigger
+            - !Ref 'AWS::NoValue'
+        PriceClass: PriceClass_All
+        Restrictions:
+          GeoRestriction:
+            RestrictionType: none
+        ViewerCertificate:
+          AcmCertificateArn:
+            Ref: AcmCertificateArn
+          SslSupportMethod: sni-only
+        Logging:
+          Bucket:
+            Fn::Sub: ${LogBucket}.s3.amazonaws.com
+          IncludeCookies: false
+          Prefix:
+            Fn::If:
+            - NoLogPrefix
+            - Ref: AWS::StackName
+            - Fn::Sub: ${LogPrefix}/${AWS::StackName}
+      Tags:
+      - Key: Owner
+        Value:
+          Ref: OwnerTag
+      - Key: Project
+        Value:
+          Ref: ProjectTag
+      - Key: Environment
+        Value:
+          Ref: EnvironmentTag
+  DistributionDNS:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneName:
+        Fn::Sub: ${HostedZoneName}.
+      Name:
+        Fn::Sub: ${HostedZonePrefix}.${HostedZoneName}
+      AliasTarget:
+        DNSName:
+          Fn::GetAtt:
+          - CloudFrontDistribution
+          - DomainName
+        HostedZoneId: Z2FDTNDATAQYW2
+      Type: A

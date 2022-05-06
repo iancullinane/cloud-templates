@@ -3,14 +3,16 @@ name: default
 
 # Pipeline for putting cloudformation files into S3 for nested stacks
 steps:
-  - name: upload
+  - name: upload-sheeta
     image: plugins/s3
     settings:
-      bucket: craft-cf-bucket
+      bucket: sheeta-cfn-bucket
       region: us-east-2
       access_key:
-        from_secret: AWS-Key
+        from_secret: sheeta_aws_key
       secret_key:
-        from_secret: AWS-Secret
+        from_secret: sheeta_aws_secret
       source: templates/**/*
-      target: /
+      target: /${DRONE_COMMIT_SHA}/
+
+
